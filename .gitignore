@@ -20,6 +20,7 @@ coverage/
 *.sqlite3-*
 media/
 private-data/
+.private/
 backups/
 exports/
 *.xlsx

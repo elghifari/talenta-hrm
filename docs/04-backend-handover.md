@@ -1,7 +1,7 @@
 # Backend handover
 
 Status: initial backend slice implemented, locally verified and independently reviewed. No blocking findings remain in this slice. Not a completed M1 milestone or a live-payroll release.
-Verified locally: 2026-09-30. Planning documents 01–03 remain the behavioral baseline.
+Verified locally: 2026-09-30. Company-specific planning specifications remain the private behavioral baseline.
 
 ## Implemented
 
@@ -41,7 +41,7 @@ Unauthenticated access to protected endpoints returns 403 with session authentic
 - `ruff check .`: passed. `ruff format --check .`: passed.
 - Review-driven RED/GREEN: simultaneous creates initially returned 201/500, code PATCH races 200/500, and disjoint PATCHes lost a persisted field. Corrected results are 201/400, 200/400 and both disjoint edits preserved. Five real PostgreSQL race/rollback tests now pass, including unrelated audit foreign-key errors and atomic rollback. Parent re-ran the full suite: 53 passed.
 - Production/staging `check --deploy --fail-level WARNING` passes for explicit synthetic configuration with domain/HSTS opt-ins. This is configuration testing, not proof of a deployed secure service. Default HSTS domain opt-ins require confirmation and emit W005/W021 until settled.
-- CI file exists and its check commands passed locally. Remote CI has not run; nothing has been pushed.
+- CI file exists and its check commands passed locally. At the initial local verification checkpoint, remote CI had not run. Check GitHub Actions for subsequent remote results.
 - Independent re-review: passed, no blocking security or logic findings for this slice. The reviewer inspected the fixes/tests; the parent independently executed the 53-test suite. Nonblocking follow-up: add unique-error classification tests for other tables/constraints when extending write paths.
 
 ## Current concurrency limits
@@ -61,7 +61,7 @@ Keep calculations, recommendations and deferred-module bridge decisions behind t
 
 ## Local state
 
-See README for exact commands. Isolated synthetic PostgreSQL 15 cluster: ignored `.local/postgres`, loopback port 55439, database/user `hrm_dev`, local trust authentication. Existing PostgreSQL on port 5432 was not modified. The development database contains schema and role groups only; tests use their own database. No real source workbook/payroll rows or prototype credentials were imported. No web server is kept running by this handover.
+See [the development guide](../DEVELOPMENT.md) for exact commands. Isolated synthetic PostgreSQL 15 cluster: ignored `.local/postgres`, loopback port 55439, database/user `hrm_dev`, local trust authentication. Existing PostgreSQL on port 5432 was not modified. The development database contains schema and role groups only; tests use their own database. No real source workbook/payroll rows or prototype credentials were imported. No web server is kept running by this handover.
 
 ## Delivery gate
 
