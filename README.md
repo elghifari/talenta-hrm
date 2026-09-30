@@ -58,6 +58,8 @@ The migration user must be able to enable `btree_gist`, or an authorized databas
 
 ## Checks
 
+Follow the [development workflow](docs/05-development-workflow.md): separate RED test, GREEN implementation and optional REFACTOR commits for each behavior.
+
 ```bash
 uv run pytest -q
 uv run python backend/manage.py check
