@@ -9,6 +9,7 @@ def test_two_tabs_clear_old_account_draft_and_attribute_new_write(
     page, live_server, login, synthetic_data, db_call
 ):
     from types import SimpleNamespace
+
     from audit.models import AuditEvent
     from django.contrib.auth import get_user_model
     from django.contrib.auth.models import Group

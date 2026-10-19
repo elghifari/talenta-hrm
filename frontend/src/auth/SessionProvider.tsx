@@ -9,6 +9,11 @@ function decodeIdentity(value: unknown): Identity {
   }
   return x;
 }
+function changedIdentity(previous: Identity, next: Identity) {
+  return previous.id !== next.id || previous.email !== next.email ||
+    previous.capabilities.employees_read !== next.capabilities.employees_read ||
+    previous.capabilities.employees_write !== next.capabilities.employees_write;
+}
 type Status = 'checking' | 'authenticated' | 'anonymous' | 'error';
 type Session = {
   status: Status; identity: Identity | null; expired: boolean; busy: boolean; generation: number;
@@ -23,20 +28,48 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [generation, setGeneration] = useState(0);
   const epoch = useRef(0);
+  const verifiedIdentity = useRef<Identity | null>(null);
+  const channel = useRef<BroadcastChannel | null>(null);
+  const acceptIdentity = useCallback((user: Identity) => {
+    if (verifiedIdentity.current && changedIdentity(verifiedIdentity.current, user)) epoch.current += 1;
+    verifiedIdentity.current = user;
+    setGeneration(epoch.current); setIdentity(user); setExpired(false); setStatus('authenticated'); setBusy(false);
+  }, []);
   const clear = useCallback((expiration: boolean) => {
-    epoch.current += 1; setGeneration(epoch.current); setIdentity(null); setExpired(expiration); setStatus('anonymous');
+    epoch.current += 1; verifiedIdentity.current = null;
+    setGeneration(epoch.current); setIdentity(null); setExpired(expiration); setStatus('anonymous'); setBusy(false);
   }, []);
   const retryIdentity = useCallback(() => {
-    const current = ++epoch.current; setGeneration(current); setStatus('checking');
+    const current = ++epoch.current; verifiedIdentity.current = null;
+    setGeneration(current); setIdentity(null); setStatus('checking'); setBusy(false);
     apiRequest<unknown>('/api/auth/me/').then(decodeIdentity).then(user => {
-      if (epoch.current !== current) return;
-      setIdentity(user); setStatus('authenticated');
+      if (epoch.current === current) acceptIdentity(user);
     }).catch(error => {
       if (epoch.current !== current) return;
-      setIdentity(null); setStatus(error instanceof ApiError && error.status === 403 ? 'anonymous' : 'error');
+      setStatus(error instanceof ApiError && error.status === 403 ? 'anonymous' : 'error');
     });
-  }, []);
+  }, [acceptIdentity]);
   useEffect(() => { retryIdentity(); return () => { epoch.current += 1; }; }, [retryIdentity]);
+  useEffect(() => {
+    function verifyOnFocus() {
+      const current = epoch.current;
+      apiRequest('/api/auth/me/').then(decodeIdentity).then(user => {
+        if (current === epoch.current) acceptIdentity(user);
+      }).catch(error => {
+        if (current === epoch.current && verifiedIdentity.current && error instanceof ApiError && error.status === 403) clear(true);
+      });
+    }
+    if (typeof window.BroadcastChannel === 'function') {
+      const connection = new window.BroadcastChannel('talenta-hrm-session');
+      channel.current = connection;
+      connection.onmessage = event => { if (event.data?.type === 'changed') retryIdentity(); };
+    }
+    window.addEventListener('focus', verifyOnFocus);
+    return () => {
+      window.removeEventListener('focus', verifyOnFocus);
+      channel.current?.close(); channel.current = null;
+    };
+  }, [acceptIdentity, clear, retryIdentity]);
   const login = useCallback(async (email: string, password: string) => {
     const current = ++epoch.current; setBusy(true);
     try {
@@ -45,9 +78,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       await getCsrf();
       const user = decodeIdentity(await apiRequest('/api/auth/me/'));
       if (epoch.current !== current) return;
-      setGeneration(current); setIdentity(user); setExpired(false); setStatus('authenticated');
+      acceptIdentity(user); channel.current?.postMessage({ type: 'changed' });
     } finally { if (epoch.current === current) setBusy(false); }
-  }, []);
+  }, [acceptIdentity]);
   const logout = useCallback(async () => {
     const current = epoch.current; setBusy(true);
     try {
@@ -55,16 +88,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       catch (error) {
         if (!(error instanceof ApiError && error.status === 403)) throw error;
         let anonymous = false;
-        try { decodeIdentity(await apiRequest('/api/auth/me/')); }
-        catch (verification) {
+        try {
+          const user = decodeIdentity(await apiRequest('/api/auth/me/'));
+          if (current === epoch.current) acceptIdentity(user);
+        } catch (verification) {
           if (verification instanceof ApiError && verification.status === 403) anonymous = true;
           else throw verification;
         }
         if (!anonymous) throw error;
       }
-      if (epoch.current === current) clear(false);
+      if (epoch.current === current) { clear(false); channel.current?.postMessage({ type: 'changed' }); }
     } finally { setBusy(false); }
-  }, [clear]);
+  }, [clear, acceptIdentity]);
   const request = useCallback(async <T,>(path: string, options?: Parameters<typeof apiRequest>[1]): Promise<T> => {
     const current = epoch.current;
     try {
@@ -74,14 +109,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (current !== epoch.current) throw new DOMException('Stale session', 'AbortError');
       if (error instanceof ApiError && error.status === 403) {
-        try { decodeIdentity(await apiRequest('/api/auth/me/')); }
-        catch (verification) {
+        try {
+          const user = decodeIdentity(await apiRequest('/api/auth/me/'));
+          if (current === epoch.current) acceptIdentity(user);
+        } catch (verification) {
           if (current === epoch.current && verification instanceof ApiError && verification.status === 403) clear(true);
         }
+        if (current !== epoch.current) throw new DOMException('Stale session', 'AbortError');
       }
       throw error;
     }
-  }, [clear]);
+  }, [clear, acceptIdentity]);
   return <Context.Provider value={{ status, identity, expired, busy, generation, login, logout, retryIdentity, request }}>{children}</Context.Provider>;
 }
 export function useSession() {
