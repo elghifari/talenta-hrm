@@ -1,6 +1,6 @@
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView, LogoutView
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
@@ -30,7 +30,7 @@ class SessionLoginView(LoginView):
 class SessionLogoutView(LogoutView):
     def post(self, request, *args, **kwargs):
         logout(request)
-        return JsonResponse({}, status=204)
+        return HttpResponse(status=204)
 
 
 @api_view(["GET"])
