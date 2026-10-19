@@ -8,7 +8,7 @@ afterEach(() => { vi.unstubAllGlobals(); window.history.replaceState({}, '', '/'
 test('anonymous bootstrap exposes an accessible email login form without expiry messaging', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'Authentication required' }), { status: 403 })));
   render(<App />);
-  expect(await screen.findByRole('button', { name: 'Masuk', exact: true })).toBeEnabled();
+  expect(await screen.findByRole('button', { name: 'Masuk' })).toBeEnabled();
   expect(screen.getByLabelText('Email')).toHaveAttribute('autocomplete', 'username');
   expect(screen.getByLabelText('Sandi')).toHaveAttribute('type', 'password');
   expect(screen.queryByText(/Sesi Anda berakhir/)).not.toBeInTheDocument();
@@ -27,13 +27,13 @@ test('login uses form email, refreshed CSRF and server capabilities; logout clea
   const user = userEvent.setup(); render(<App />);
   await user.type(await screen.findByLabelText('Email'), 'hr@example.test');
   await user.type(screen.getByLabelText('Sandi'), 'Synthetic-test-only');
-  await user.click(screen.getByRole('button', { name: 'Masuk', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Masuk' }));
   expect(await screen.findByText('hr@example.test')).toBeInTheDocument();
   const login = calls.find(c => c.path.endsWith('/login/'))!;
   expect(String(login.init?.body)).toContain('username=hr%40example.test');
   expect(login.init?.credentials).toBe('same-origin');
   expect(calls.filter(c => c.path.endsWith('/csrf/'))).toHaveLength(2);
-  await user.click(screen.getByRole('button', { name: 'Keluar', exact: true }));
-  expect(await screen.findByRole('button', { name: 'Masuk', exact: true })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Keluar' }));
+  expect(await screen.findByRole('button', { name: 'Masuk' })).toBeInTheDocument();
   expect(screen.queryByText('hr@example.test')).not.toBeInTheDocument();
 });
