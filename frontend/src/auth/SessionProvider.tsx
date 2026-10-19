@@ -54,8 +54,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       try { await apiRequest('/api/auth/logout/', { method: 'POST' }); }
       catch (error) {
         if (!(error instanceof ApiError && error.status === 403)) throw error;
-        try { await apiRequest('/api/auth/me/'); throw error; }
-        catch (verification) { if (!(verification instanceof ApiError && verification.status === 403)) throw verification; }
+        let anonymous = false;
+        try { decodeIdentity(await apiRequest('/api/auth/me/')); }
+        catch (verification) {
+          if (verification instanceof ApiError && verification.status === 403) anonymous = true;
+          else throw verification;
+        }
+        if (!anonymous) throw error;
       }
       if (epoch.current === current) clear(false);
     } finally { setBusy(false); }
