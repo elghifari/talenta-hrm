@@ -6,7 +6,7 @@ import { useEmployeeRead } from './useEmployeeRead';
 export function EmployeeListPage() {
   const { identity } = useSession(); const writable = identity!.capabilities.employees_write;
   const resource = useEmployeeRead('/api/employees/', decodeEmployees);
-  return <><div className="page-heading"><div><h1>Data pegawai</h1><p>{writable ? 'Kelola kode dan nama pegawai.' : 'Lihat identitas pegawai dalam lingkup unit Anda.'}</p></div></div>
+  return <><div className="page-heading"><div><h1>Data pegawai</h1><p>{writable ? 'Kelola kode dan nama pegawai.' : 'Lihat identitas pegawai dalam lingkup unit Anda.'}</p></div>{writable && <Link className="primary" to="/employees/new">Tambah pegawai</Link>}</div>
     {!writable && <p className="notice">Akses baca saja. Data yang terlihat mengikuti hak akses unit Anda.</p>}
     {resource.loading && <p role="status">Memuat data pegawai…</p>}
     {Boolean(resource.error) && <div role="alert"><p>{errorText(resource.error)}</p><button onClick={resource.retry}>Coba lagi</button></div>}
