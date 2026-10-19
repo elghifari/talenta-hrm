@@ -3,6 +3,19 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test, vi } from 'vitest';
 import { App } from '../app/App';
 
+test('failed logout with a still-valid identity does not claim the session ended', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (path: string) => {
+    if(path.endsWith('/csrf/')) return Response.json({ csrfToken: 'valid' });
+    if(path.endsWith('/logout/')) return new Response('<html>CSRF denied</html>', { status: 403, headers: { 'content-type': 'text/html' } });
+    return Response.json({ id: 1, email: 'hr@example.test', capabilities: { employees_read: true, employees_write: true } });
+  }));
+  render(<App />); const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Keluar' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Tindakan ditolak');
+  expect(screen.getByText('hr@example.test')).toBeInTheDocument();
+  expect(screen.queryByLabelText('Sandi')).not.toBeInTheDocument();
+});
+
 afterEach(() => { vi.unstubAllGlobals(); window.history.replaceState({}, '', '/'); });
 
 test('anonymous bootstrap exposes an accessible email login form without expiry messaging', async () => {
