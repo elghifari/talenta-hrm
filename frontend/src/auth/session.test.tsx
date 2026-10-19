@@ -5,6 +5,7 @@ import { App } from '../app/App';
 
 test('failed logout with a still-valid identity does not claim the session ended', async () => {
   vi.stubGlobal('fetch', vi.fn(async (path: string) => {
+    if(path === '/api/employees/') return Response.json([]);
     if(path.endsWith('/csrf/')) return Response.json({ csrfToken: 'valid' });
     if(path.endsWith('/logout/')) return new Response('<html>CSRF denied</html>', { status: 403, headers: { 'content-type': 'text/html' } });
     return Response.json({ id: 1, email: 'hr@example.test', capabilities: { employees_read: true, employees_write: true } });
@@ -32,6 +33,7 @@ test('login uses form email, refreshed CSRF and server capabilities; logout clea
   const calls: { path: string; init?: RequestInit }[] = [];
   vi.stubGlobal('fetch', vi.fn(async (path: string, init?: RequestInit) => {
     calls.push({ path, init });
+    if(path === '/api/employees/') return Response.json([]);
     if(path.endsWith('/csrf/')) return Response.json({ csrfToken: signedIn ? 'rotated' : 'initial' });
     if(path.endsWith('/login/')) { signedIn = true; return Response.json({ detail: 'Signed in' }); }
     if(path.endsWith('/logout/')) { signedIn = false; return new Response(null, { status: 204 }); }
