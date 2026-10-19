@@ -24,11 +24,11 @@ Replace fragmented spreadsheet and message handoffs with employee administration
 
 A legacy Apps Script payroll application over spreadsheets provides terminology and workflow evidence, not approved visual direction or automatically authoritative calculation rules. The owner requested reviewing familiar vocabulary and workflows while replacing its visual design.
 
-Design the overall HRIS shell and navigation first, then detail the employee-administration slice. This is design work before React implementation. Future modules may appear in clearly labeled planning diagrams, but must not masquerade as working product navigation.
+Design the overall HRIS shell and navigation first, then detail the employee-administration slice. The selected direction is now implemented in the first employee-administration slice; verification and limits are recorded in docs/06-employee-ui-handover.md. Future modules may appear in clearly labeled planning diagrams, but must not masquerade as working product navigation.
 
 ## Capabilities and Constraints
 
-The current backend supports session login/logout, employee identity reads and HR writes, unit-scoped manager reads, HR compensation-history reads, effective-dated storage and employee-change auditing. Employee identity exposes UUID, text employee code and full name. Creating identity does not create an assignment.
+The current application supports React session login/logout, employee identity list/detail and HR create/edit, unit-scoped manager reads, server capability metadata, effective-dated storage and employee-change auditing. HR compensation-history reads remain API-only. Employee identity exposes UUID, text employee code and full name. Creating identity does not create an assignment.
 
 Preserve server-side authorization, strict validation, text codes with leading zeros and transactional audits. Do not send unauthorized salary or outside-unit data to the client. Unit descendants do not inherit grants automatically.
 
@@ -38,7 +38,7 @@ This slice excludes account/unit administration, richer employee fields, assignm
 
 README.md, DEVELOPMENT.md, backend code/tests, docs/04-backend-handover.md, docs/05-development-workflow.md and docs/superpowers/specs/2026-10-19-employee-administration-design.md. Private planning and legacy source are local reference material and must not be copied into public artifacts wholesale.
 
-The backend's 53-test suite and repository checks were executed during context refresh on 2026-10-19. There is no implemented React frontend. The owner subsequently selected concept A from the synthetic shell study: persistent navy sidebar, light record surfaces and blue primary actions. The selected direction is recorded in docs/superpowers/specs/2026-10-19-hris-ui-brief.md. This supersedes the earlier light/teal minimal-header proposal. No logo, photo or illustration assets are approved; the study does not establish an existing corporate brand system.
+The backend's 53-test suite and repository checks were executed during context refresh on 2026-10-19. The first React employee-administration slice is implemented locally. The owner subsequently selected concept A from the synthetic shell study: persistent navy sidebar, light record surfaces and blue primary actions. The selected direction is recorded in docs/superpowers/specs/2026-10-19-hris-ui-brief.md. This supersedes the earlier light/teal minimal-header proposal. No logo, photo or illustration assets are approved; the study does not establish an existing corporate brand system.
 
 Use explicitly synthetic records for design demonstrations and test acceptance. No real employee/payroll data, credentials or unsupported claims belong in design artifacts.
 

@@ -99,6 +99,43 @@ def test_selected_shell_desktop_phone_and_long_records(page, live_server, login,
         assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
     page.set_viewport_size({"width": 390, "height": 844})
     page.screenshot(path=str(directory / "mobile.png"), full_page=True)
+    pairs = page.evaluate("""() => {
+      const result = [];
+      for (const el of document.querySelectorAll('body *')) {
+        const hasText = [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
+        if (!el.getClientRects().length || !hasText) continue;
+        let node = el, bg = '';
+        while (node) {
+          const color = getComputedStyle(node).backgroundColor;
+          if (color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent') { bg = color; break; }
+          node = node.parentElement;
+        }
+        result.push([getComputedStyle(el).color, bg]);
+      }
+      return result;
+    }""")
+    import json
+    import re
+
+    def luminance(channels):
+        normalized = [v / 255 for v in channels]
+        values = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in normalized]
+        return sum(a * b for a, b in zip(values, [0.2126, 0.7152, 0.0722]))
+
+    ratios = []
+    for foreground, background in pairs:
+        fg = [float(v) for v in re.findall(r"[\d.]+", foreground)]
+        bg = [float(v) for v in re.findall(r"[\d.]+", background)]
+        if len(fg) != 3 or len(bg) != 3:
+            continue
+        light, dark = sorted([luminance(fg), luminance(bg)], reverse=True)
+        ratio = (light + 0.05) / (dark + 0.05)
+        assert ratio >= 4.5, (foreground, background, ratio)
+        ratios.append(ratio)
+    assert ratios
+    (directory / "contrast.json").write_text(
+        json.dumps({"sample_count": len(ratios), "minimum_ratio": min(ratios)})
+    )
     page.evaluate("document.documentElement.style.fontSize = '200%'")
     assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
     assert account.email in page.locator("body").inner_text()

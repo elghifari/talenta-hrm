@@ -3,7 +3,7 @@
 Internal employee administration, attendance, payroll and applicant registry for Talenta Center.
 
 ## Status
-Initial Django backend slice implemented. M1 is not complete; there is no React UI or payroll engine yet. See the [backend handover](docs/04-backend-handover.md) for implemented endpoints, verification and remaining work.
+React employee administration is implemented over the Django backend: login/logout, scoped list/detail and HR identity creation/editing. M1 remains incomplete; there is no payroll engine. See the [employee UI handover](docs/06-employee-ui-handover.md) for acceptance and remaining limits; the [backend handover](docs/04-backend-handover.md) preserves the initial backend history.
 
 ## Private planning
 
@@ -15,7 +15,7 @@ The [backend handover](docs/04-backend-handover.md) describes the implemented AP
 Django + Django REST Framework, React/TypeScript, managed PostgreSQL, Django authentication, one repository and same-origin deployment.
 
 ## Immediate implementation milestone
-Implementation was authorized in the build session. Continue M1 with controlled unit/account administration, richer employee fields and effective-dated assignment workflows, then the React HR interface. Payroll policy gates O1–O9 remain open as recorded in the planning documents.
+The first employee-administration UI slice is implemented. Next: controlled account/unit administration, richer employee records, then effective-dated assignment and compensation writes. Payroll policy gates O1–O9 remain open as recorded in the private planning documents.
 
 ## Data handling
 Do not commit real employee/payroll data, source workbook exports, credentials, uploaded files or database backups. Use synthetic test fixtures. Approved historical payroll must remain immutable.
@@ -68,6 +68,51 @@ uv run ruff format --check .
 ```
 
 GitHub Actions configuration is in `.github/workflows/backend.yml`. Check the repository's Actions page for remote verification results.
+
+## Frontend and browser checks
+
+Node 26.7.0 is pinned in `.node-version`; frontend dependencies are exact-pinned in `frontend/package-lock.json`. Run `npm` commands below as `npm.cmd` on Windows Git Bash if the bundled wrapper reports a TTY error.
+
+Start Django using the commands above. In a second shell:
+
+```bash
+npm --prefix frontend ci
+npm --prefix frontend run dev
+```
+
+Open `http://127.0.0.1:5173`. Vite forwards `/api/` to Django on `127.0.0.1:8085`; browser credentials stay same-origin. Development-only CSRF trust permits loopback Vite origins on port 5173. Do not add wildcard CORS/CSRF trust. `HRM_API_TARGET` overrides the proxy backend target for isolated tests.
+
+For a local built-app smoke test:
+
+```bash
+npm --prefix frontend run build
+uv run python backend/manage.py runserver 127.0.0.1:8085
+```
+
+Open Django's loopback address on port 8085. Development settings read the Vite manifest and serve only built assets; nested employee routes support reload. Missing/invalid builds return 503, unknown API/assets paths remain errors. Staging and production do not enable this local file handler; production frontend serving remains a later deployment task.
+
+Frontend checks:
+
+```bash
+npm --prefix frontend run typecheck
+npm --prefix frontend run lint
+npm --prefix frontend test -- --run
+npm --prefix frontend run build
+```
+
+Real-browser acceptance:
+
+```bash
+uv sync --frozen --group browser
+uv run --group browser playwright install chromium
+uv run --group browser pytest --run-browser tests/browser -q
+```
+
+Build first. The suite uses real Chromium, Django live_server and pytest's disposable PostgreSQL database. It creates synthetic HR/manager/finance accounts and unit assignments only there, then tears them down. It does not create development login accounts. ORM assertions run in worker threads while the browser loop is active; Django async safety remains enabled. The suite also starts and stops its own loopback Vite process on port 5173, which must be free. Ordinary `uv run pytest -q` deliberately excludes browser tests. CI provisions Chromium's Linux dependencies explicitly.
+
+Synthetic UI screenshots are written to ignored `.local/ui-review/`. Browser contexts stay in memory; no auth-state files or credentials are uploaded. Use synthetic data only when capturing screenshots or running tests.
+
+For explicit synthetic HR account setup through trusted maintenance, see [the UI handover](docs/06-employee-ui-handover.md). A normal development login is not automatically created by setup or browser acceptance.
 
 ## Accounts and deployment
 

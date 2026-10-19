@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-19T10:20:11.140168+00:00",
+  "title": "Talenta HRIS design system",
+  "extensions": {
+    "breakpoints": [
+      {
+        "name": "intermediate",
+        "value": "1000px"
+      },
+      {
+        "name": "phone",
+        "value": "680px"
+      }
+    ],
+    "shadows": [],
+    "motion": []
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "html": "<button class=\"ds-primary\">Simpan perubahan</button>",
+      "css": ".ds-primary{background:#315a85;color:white;border:1px solid #315a85;border-radius:5px;min-height:44px;padding:9px 15px;font:600 14px \"Segoe UI\",Arial,sans-serif}.ds-primary:hover{background:#25476a}.ds-primary:focus-visible{outline:3px solid #93601e;outline-offset:3px}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "",
+      "html": "<button class=\"ds-secondary\">Batal</button>",
+      "css": ".ds-secondary{background:white;color:#26303a;border:1px solid #77818c;border-radius:5px;min-height:44px;padding:9px 15px;font:600 14px \"Segoe UI\",Arial,sans-serif}.ds-secondary:hover{background:#edf1f4}.ds-secondary:focus-visible{outline:3px solid #93601e;outline-offset:3px}"
+    },
+    {
+      "name": "Employee field",
+      "kind": "input",
+      "refersTo": "",
+      "html": "<label class=\"ds-label\" for=\"ds-code\">Kode pegawai</label><input id=\"ds-code\" class=\"ds-input\">",
+      "css": ".ds-label{display:block;font:600 14px \"Segoe UI\",Arial,sans-serif;margin-bottom:7px}.ds-input{width:100%;box-sizing:border-box;min-height:46px;border:1px solid #77818c;border-radius:4px;padding:10px 12px;font:16px \"Segoe UI\",Arial,sans-serif}.ds-input:focus-visible{outline:3px solid #93601e;outline-offset:3px}"
+    },
+    {
+      "name": "Module navigation",
+      "kind": "nav",
+      "refersTo": "",
+      "html": "<nav class=\"ds-nav\"><a href=\"#personnel\" aria-current=\"page\">Personnel</a></nav>",
+      "css": ".ds-nav{background:#163049;padding:16px}.ds-nav a{display:block;padding:12px;background:#2b435a;color:white;border-radius:4px;font:600 14px \"Segoe UI\",Arial,sans-serif;text-decoration:none}.ds-nav a:focus-visible{outline:3px solid #93601e;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Selected persistent-sidebar direction A",
+    "overview": "Persistent navy navigation, light employee records and explicit primary actions.",
+    "keyCharacteristics": [
+      "Predictable record navigation",
+      "Scoped manager presentation",
+      "Explicit validation and save feedback"
+    ],
+    "rules": [],
+    "dos": [
+      "Preserve text codes and server authorization."
+    ],
+    "donts": [
+      "Do not expose future modules as dead links."
+    ]
+  }
+}

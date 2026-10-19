@@ -110,12 +110,14 @@ Frontend commands apply once its test infrastructure exists. Browser checks appl
 def test_hr_identity_exposes_employee_capabilities(django_user_model):
     from django.contrib.auth.models import Group
     from django.test import Client
-    user = django_user_model.objects.create_user(email='hr@example.test')
-    user.groups.add(Group.objects.get_or_create(name='HR')[0])
+
+    user = django_user_model.objects.create_user(email="hr@example.test")
+    user.groups.add(Group.objects.get_or_create(name="HR")[0])
     client = Client()
     client.force_login(user)
-    assert client.get('/api/auth/me/').json()['capabilities'] == {
-        'employees_read': True, 'employees_write': True,
+    assert client.get("/api/auth/me/").json()["capabilities"] == {
+        "employees_read": True,
+        "employees_write": True,
     }
 ```
 
@@ -123,10 +125,10 @@ def test_hr_identity_exposes_employee_capabilities(django_user_model):
 
 ```python
 def employee_capabilities(user):
-    names = set(user.groups.values_list('name', flat=True)) if user.is_authenticated else set()
+    names = set(user.groups.values_list("name", flat=True)) if user.is_authenticated else set()
     return {
-        'employees_read': 'HR' in names or 'KEPALA_UNIT' in names,
-        'employees_write': 'HR' in names,
+        "employees_read": "HR" in names or "KEPALA_UNIT" in names,
+        "employees_write": "HR" in names,
     }
 ```
 
@@ -146,7 +148,7 @@ def employee_capabilities(user):
 ```python
 @pytest.mark.django_db
 def test_unknown_api_is_not_a_spa_page(client):
-    response = client.get('/api/not-a-real-endpoint/')
+    response = client.get("/api/not-a-real-endpoint/")
     assert response.status_code == 404
     assert b'<div id="root"' not in response.content
 ```
@@ -234,16 +236,16 @@ expect(changedFields(
 ```python
 @pytest.mark.django_db(transaction=True)
 def test_hr_create_survives_reload(page, live_server, hr_account):
-    page.goto(live_server.url + '/login')
-    page.get_by_label('Email').fill(hr_account.email)
-    page.get_by_label('Sandi').fill(hr_account.password)
-    page.get_by_role('button', name='Masuk', exact=True).click()
-    page.get_by_role('button', name='Tambah pegawai', exact=True).click()
-    page.get_by_label('Kode pegawai').fill('0099')
-    page.get_by_label('Nama lengkap').fill('Pegawai Contoh Browser')
-    page.get_by_role('button', name='Simpan pegawai', exact=True).click()
+    page.goto(live_server.url + "/login")
+    page.get_by_label("Email").fill(hr_account.email)
+    page.get_by_label("Sandi").fill(hr_account.password)
+    page.get_by_role("button", name="Masuk", exact=True).click()
+    page.get_by_role("button", name="Tambah pegawai", exact=True).click()
+    page.get_by_label("Kode pegawai").fill("0099")
+    page.get_by_label("Nama lengkap").fill("Pegawai Contoh Browser")
+    page.get_by_role("button", name="Simpan pegawai", exact=True).click()
     page.reload()
-    assert page.get_by_text('0099', exact=True).is_visible()
+    assert page.get_by_text("0099", exact=True).is_visible()
 ```
 
 - [ ] After real manager login, use `page.context.request` with the session cookie and fresh CSRF token to directly POST/PATCH employee endpoints. Assert 403 and read database/audit counts to prove nothing changed. Direct outside-unit GET returns 404; manager list excludes child-unit, expired/future and unassigned employees; a second granted unit is visible.

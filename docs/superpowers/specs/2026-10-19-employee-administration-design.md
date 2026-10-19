@@ -1,7 +1,7 @@
 # Employee administration frontend
 
 Date: 2026-10-19
-Status: design specification for review. Not authorization to skip implementation-plan review.
+Status: implemented locally after design and native execution-plan approval. See ../../06-employee-ui-handover.md for verification and remaining limits. The starting-point section below remains historical context.
 
 ## 1. Outcome and scope
 
