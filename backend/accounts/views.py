@@ -7,6 +7,8 @@ from django.views.decorators.http import require_GET
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from .capabilities import employee_capabilities
+
 
 @require_GET
 @ensure_csrf_cookie
@@ -33,4 +35,10 @@ class SessionLogoutView(LogoutView):
 
 @api_view(["GET"])
 def me(request):
-    return Response({"id": request.user.pk, "email": request.user.email})
+    return Response(
+        {
+            "id": request.user.pk,
+            "email": request.user.email,
+            "capabilities": employee_capabilities(request.user),
+        }
+    )
