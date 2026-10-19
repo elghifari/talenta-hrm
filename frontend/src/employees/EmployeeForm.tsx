@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router';
+import { PageTitle } from '../app/PageTitle';
 import { ApiError, errorText, isAbort } from '../api/client';
 import { useSession } from '../auth/SessionProvider';
 import { changedFields, saveEmployee } from './api';
@@ -60,7 +61,7 @@ export function EmployeeForm({ employee }: { employee?: Employee }) {
     } finally { if (alive.current) setBusy(false); }
   }
   return <><Link className="back" to={employee ? '/employees/' + employee.id : '/employees'}>Kembali ke {employee ? 'detail pegawai' : 'data pegawai'}</Link>
-    <div className="page-heading"><div><h1>{employee ? 'Ubah data pegawai' : 'Tambah pegawai'}</h1><p>{employee ? 'Perbarui identitas pegawai.' : 'Buat identitas pegawai. Penugasan unit dilakukan terpisah.'}</p></div></div>
+    <div className="page-heading"><div><PageTitle>{employee ? 'Ubah data pegawai' : 'Tambah pegawai'}</PageTitle><p>{employee ? 'Perbarui identitas pegawai.' : 'Buat identitas pegawai. Penugasan unit dilakukan terpisah.'}</p></div></div>
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Perubahan belum disimpan"><p>Perubahan belum disimpan. Tinggalkan halaman ini?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap mengedit</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     {summary && <div className={confirmed ? 'notice' : 'error'} role="alert"><p>{summary}</p>{(confirmed || uncertain) && <Link to={employee ? '/employees/' + employee.id : '/employees'}>Periksa data tersimpan</Link>}</div>}
     {confirmed ? <Link to={employee ? '/employees/' + employee.id : '/employees'}>Buka data pegawai</Link> : <form ref={form} className="record" onSubmit={submit} noValidate>
