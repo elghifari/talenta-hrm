@@ -11,6 +11,9 @@ dependencies = [
 ]
 
 [dependency-groups]
+browser = [
+    "pytest-playwright>=0.10.0",
+]
 dev = ["pytest>=9,<10", "pytest-django>=4.11,<5", "ruff>=0.15,<1"]
 
 [tool.pytest.ini_options]

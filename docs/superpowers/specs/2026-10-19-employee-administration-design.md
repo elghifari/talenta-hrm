@@ -38,7 +38,7 @@ The documented isolated PostgreSQL cluster was started on loopback port 55439 be
 
 ## 3. Frontend tooling and boundaries
 
-Use a `frontend/` workspace with Vite, React, TypeScript, React Router in declarative mode, native `fetch` and plain CSS. Use npm and commit its lockfile. Select and pin compatible package/runtime versions during setup; do not assume that the machine's currently installed Node release is the repository standard.
+Use a `frontend/` workspace with Vite, React, TypeScript, React Router in Data mode for supported dirty-navigation blocking, native `fetch` and plain CSS. Use npm and commit its lockfile. Select and pin compatible package/runtime versions during setup; do not assume that the machine's currently installed Node release is the repository standard.
 
 Use Playwright for browser acceptance. Add focused component tests with Vitest and React Testing Library for state transitions that are difficult to exercise deterministically through a live server. Mock only transport timing/failures where necessary; real browser workflows and authorization acceptance use Django and PostgreSQL.
 
