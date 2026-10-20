@@ -37,3 +37,5 @@ Thumbs.db
 staticfiles/
 test-results/
 playwright-report/
+*.[mM][dD]
+!/readme.md
