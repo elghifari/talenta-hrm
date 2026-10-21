@@ -1,7 +1,7 @@
 import './imports.css';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router';
-import { isAbort } from '../../api/client';
+import { ApiError, isAbort } from '../../api/client';
 import { PageTitle } from '../../app/PageTitle';
 import { useSession } from '../../auth/SessionProvider';
 import { useEmployeeRead } from '../useEmployeeRead';
@@ -15,21 +15,40 @@ function Preview({ batchId }: { batchId: string }) {
   const { setDirty } = useOutletContext<{ setDirty(value: boolean): void }>();
   const [receipt, setReceipt] = useState<ImportBatch | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const [uncertain, setUncertain] = useState(false); const [blocked, setBlocked] = useState(false);
   const controller = useRef(new AbortController()); const allowLeave = useRef(false);
-  const blocker = useUnsavedChanges(busy, allowLeave);
-  useEffect(() => { setDirty(busy); return () => setDirty(false); }, [setDirty, busy]);
+  const blocker = useUnsavedChanges(busy || uncertain, allowLeave);
+  useEffect(() => { setDirty(busy || uncertain); return () => setDirty(false); }, [setDirty, busy, uncertain]);
   useEffect(() => { const control = new AbortController(); controller.current = control; return () => control.abort(); }, []);
   const batch = receipt ?? resource.data;
   async function confirm() {
-    if (!batch || busy || batch.state === 'committed' || batch.summary.error) return;
+    if (!batch || busy || uncertain || blocked || batch.state === 'committed' || batch.summary.error) return;
     setBusy(true); setError('');
     try { const result = await confirmBatch(request, batch.id, controller.current.signal); if (!controller.current.signal.aborted) setReceipt(result); }
-    catch (failure) { if (!controller.current.signal.aborted && !isAbort(failure)) setError(importError(failure)); }
+    catch (failure) {
+      if (!controller.current.signal.aborted && !isAbort(failure)) {
+        setError(importError(failure));
+        if (failure instanceof ApiError && failure.writeOutcome === 'uncertain') setUncertain(true);
+        if (failure instanceof ApiError && [404, 409, 410].includes(failure.status ?? 0)) setBlocked(true);
+      }
+    }
     finally { if (!controller.current.signal.aborted) setBusy(false); }
+  }
+  async function readReceipt() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = decodeBatch(await request('/api/employees/imports/' + encodeURIComponent(batchId) + '/', { signal: controller.current.signal }));
+      if (controller.current.signal.aborted) return;
+      if (result.state === 'committed') { setReceipt(result); setUncertain(false); setError(''); }
+      else setError('Server belum mengonfirmasi hasil. Periksa lagi tanpa mengirim ulang.');
+    } catch (failure) {
+      if (!controller.current.signal.aborted && !isAbort(failure)) setError('Hasil belum dapat dipastikan. Periksa data pegawai; jangan mengirim ulang batch.');
+    } finally { if (!controller.current.signal.aborted) setBusy(false); }
   }
   const committed = batch?.state === 'committed';
   return <><Link className="back" to={committed ? '/employees' : '/employees/import'}>{committed ? 'Kembali ke data pegawai' : 'Pilih CSV lain'}</Link>
-    <div className="page-heading"><div><PageTitle key={String(committed)}>{committed ? 'Batch upload tersimpan' : 'Pratinjau batch upload'}</PageTitle>{batch && <p>{committed ? 'Data pegawai telah disimpan. Unggah ulang tidak diperlukan.' : 'Hanya karyawan dari CSV ini yang ditampilkan. Belum ada data pegawai yang disimpan.'}</p>}</div></div>
+    <div className="page-heading"><div><PageTitle key={String(committed)}>{committed ? 'Batch upload tersimpan' : 'Pratinjau batch upload'}</PageTitle>{batch && <p>{committed ? 'Data pegawai telah disimpan. Unggah ulang tidak diperlukan.' : uncertain ? 'Hasil penyimpanan belum pasti. Periksa hasil sebelum mengunggah ulang.' : 'Hanya karyawan dari CSV ini yang ditampilkan. Belum ada data pegawai yang disimpan.'}</p>}</div></div>
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Permintaan masih berjalan"><p>Permintaan masih berjalan. Tinggalkan halaman?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap di pratinjau</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     {resource.loading && !receipt && <p role="status">Memuat pratinjau CSV…</p>}
     {Boolean(resource.error) && !receipt && <div role="alert"><p className="error">{importError(resource.error)}</p><button onClick={resource.retry}>Coba lagi</button></div>}
@@ -42,7 +61,8 @@ function Preview({ batchId }: { batchId: string }) {
         <ul className="import-rows" aria-label="Baris CSV">{batch.rows.map(row => <ImportComparison key={row.row} row={row} />)}</ul>
         {batch.summary.error > 0 && <p className="error" role="alert">Perbaiki baris bermasalah lalu unggah CSV kembali. Seluruh batch belum dapat disimpan.</p>}
         {error && <p className="error" role="alert">{error}</p>}
-        <div className="form-actions"><button className="primary" disabled={busy || batch.summary.error > 0} onClick={confirm}>{busy ? 'Menyimpan batch…' : 'Konfirmasi upload'}</button><button disabled={busy} onClick={() => { allowLeave.current = true; navigate('/employees'); }}>Batal</button></div>
+        {uncertain && <button disabled={busy} onClick={readReceipt}>Periksa hasil</button>}
+        <div className="form-actions"><button className="primary" disabled={busy || uncertain || blocked || batch.summary.error > 0} onClick={confirm}>{busy ? 'Menyimpan batch…' : 'Konfirmasi upload'}</button><button disabled={busy} onClick={() => { allowLeave.current = !uncertain; navigate('/employees'); }}>Batal</button></div>
       </>}
     </>}
   </>;
