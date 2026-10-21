@@ -29,13 +29,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
                 )
         return super().to_internal_value(data)
 
+    def validate_date_of_birth(self, value):
+        if value and value > timezone.localdate():
+            raise serializers.ValidationError("Tanggal lahir tidak boleh di masa depan.")
+        return value
+
     def validate(self, attrs):
-        birth = attrs.get("date_of_birth", getattr(self.instance, "date_of_birth", None))
         start = attrs.get("start_date", getattr(self.instance, "start_date", None))
         expiry = attrs.get("contract_expiry", getattr(self.instance, "contract_expiry", None))
         errors = {}
-        if birth and birth > timezone.localdate():
-            errors["date_of_birth"] = "Tanggal lahir tidak boleh di masa depan."
         if start and expiry and expiry < start:
             errors["contract_expiry"] = "Kontrak berakhir sebelum tanggal masuk."
         if errors:

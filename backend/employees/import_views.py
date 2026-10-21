@@ -1,3 +1,7 @@
+import csv
+import io
+
+from django.http import HttpResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -5,7 +9,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .import_service import batch_response, commit_batch, create_preview, get_batch
+from .imports import COLUMNS
 from .permissions import HRPermission
+
+
+class ImportTemplateView(APIView):
+    permission_classes = [IsAuthenticated, HRPermission]
+
+    def get(self, request):
+        output = io.StringIO(newline="")
+        csv.writer(output).writerow(COLUMNS)
+        response = HttpResponse(
+            "\ufeff" + output.getvalue(), content_type="text/csv; charset=utf-8"
+        )
+        response["Content-Disposition"] = 'attachment; filename="template-karyawan.csv"'
+        return response
 
 
 class ImportPreviewView(APIView):

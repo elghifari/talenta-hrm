@@ -58,7 +58,8 @@ def test_bad_rows_remain_visible_and_block_entire_batch(hr):
     client, _ = hr
     body = upload(
         client,
-        "ID Karyawan,Nama Lengkap,Tanggal Lahir\n0001,Valid,1996-01-01\n0002,,2999-01-01\n0003,A,\n0003,B,\n",
+        "ID Karyawan,Nama Lengkap,Tanggal Lahir\n"
+        "0001,Valid,1996-01-01\n0002,,2999-01-01\n0003,A,\n0003,B,\n",
     ).json()
     assert [r["status"] for r in body["rows"]] == ["new", "error", "error", "error"]
     assert body["rows"][1]["errors"].keys() >= {"full_name", "date_of_birth"}
@@ -72,7 +73,8 @@ def test_missing_optional_columns_and_blank_cells_preserve_existing_data(hr, exi
     assert first["rows"][0]["status"] == "unchanged"
     second = upload(
         client,
-        'Nama Lengkap,ID Karyawan,TTL,Jabatan,Level,Tanggal Masuk,Kontrak Berakhir\n"Karyawan A, Contoh",0001,,,,,\n',
+        "Nama Lengkap,ID Karyawan,TTL,Jabatan,Level,Tanggal Masuk,Kontrak Berakhir\n"
+        '"Karyawan A, Contoh",0001,,,,,\n',
     ).json()
     assert second["rows"][0]["status"] == "unchanged"
     assert confirm(client, second).status_code == 200

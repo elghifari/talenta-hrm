@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from audit.models import AuditEvent
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
@@ -45,7 +46,16 @@ def batch_response(batch):
     }
 
 
+def prune_batches():
+    now = timezone.now()
+    count, _ = EmployeeImportBatch.objects.filter(
+        Q(result__isnull=True, expires_at__lte=now) | Q(committed_at__lt=now - timedelta(days=1))
+    ).delete()
+    return count
+
+
 def create_preview(request, upload):
+    prune_batches()
     rows = parse_rows(upload, request)
     return EmployeeImportBatch.objects.create(
         owner=request.user,

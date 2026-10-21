@@ -117,7 +117,15 @@ def parse_rows(upload, request):
             key: None if key in {"date_of_birth", "start_date", "contract_expiry"} else ""
             for key in FIELDS
         }
-        incoming = {**(current or defaults), **data}
+        normalized = (
+            data
+            if errors
+            else {
+                key: value.isoformat() if hasattr(value, "isoformat") else value
+                for key, value in serializer.validated_data.items()
+            }
+        )
+        incoming = {**(current or defaults), **normalized}
         incoming.pop("id", None)
         changes = [
             key
