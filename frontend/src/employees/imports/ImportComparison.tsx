@@ -10,7 +10,7 @@ export function ImportComparison({ row }: { row: ImportRow }) {
   const summary = row.status === 'new' ? 'Karyawan baru' : row.status === 'unchanged' ? 'Tidak ada perubahan' : row.status === 'error' ? 'Periksa data dari CSV' : `${row.changes.length} perubahan: ${row.changes.slice(0, 2).map(fieldLabel).join(', ')}${row.changes.length > 2 ? ` +${row.changes.length - 2} lainnya` : ''}`;
   return <li className="import-line">
     <span className={'import-marker ' + (row.status === 'error' ? 'error' : '')} aria-label={statusLabel[row.status]}>{marker[row.status]}</span>
-    <details className="import-record">
+    <details className="import-record" open={row.status === 'error'}>
       <summary className="import-summary"><span className="employee-code"><span className="mobile-label">ID Karyawan</span>{row.employee_code || 'Belum diisi'}</span><strong><span className="mobile-label">Nama lengkap</span>{row.full_name || 'Belum diisi'}</strong><span>{summary}<span className="import-action"><span className="when-closed">{row.status === 'update' ? 'Lihat perubahan' : 'Lihat data'}</span><span className="when-open">Tutup rincian</span></span></span></summary>
       <div className="import-comparison">
         {Object.entries(row.errors).map(([key, messages]) => <p className="error" key={key}>{fieldLabel(key)}: {messages.join(' ')}</p>)}
