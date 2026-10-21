@@ -5,6 +5,8 @@ import { EmployeeListPage } from '../employees/EmployeeListPage';
 import { EmployeeCreatePage } from '../employees/EmployeeCreatePage';
 import { EmployeeEditPage } from '../employees/EmployeeEditPage';
 import { EmployeeDetailPage } from '../employees/EmployeeDetailPage';
+import { ImportUploadPage } from '../employees/imports/ImportUploadPage';
+import { ImportPreviewPage } from '../employees/imports/ImportPreviewPage';
 import { AppShell } from './AppShell';
 function Gate() {
   const session = useSession();
@@ -19,6 +21,8 @@ export function makeRouter(initialEntries?: string[]) {
     { path: '/login', element: <Navigate replace to="/employees" /> },
     { path: '/employees', element: <EmployeeListPage /> },
     { path: '/employees/new', element: <EmployeeCreatePage /> },
+    { path: '/employees/import', element: <ImportUploadPage /> },
+    { path: '/employees/imports/:batchId', element: <ImportPreviewPage /> },
     { path: '/employees/:id/edit', element: <EmployeeEditPage /> },
     { path: '/employees/:id', element: <EmployeeDetailPage /> },
     { path: '*', element: <><h1>Halaman tidak ditemukan</h1><a href="/employees">Kembali ke data pegawai</a></> },
