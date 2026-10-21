@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import DateRangeField, RangeOperators
 from django.db import models
@@ -56,3 +57,14 @@ class EmployeeAssignment(models.Model):
                 ],
             ),
         ]
+
+
+class EmployeeImportBatch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    session_fingerprint = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(db_index=True)
+    rows = models.JSONField(default=list)
+    result = models.JSONField(null=True, blank=True)
+    committed_at = models.DateTimeField(null=True, blank=True)
