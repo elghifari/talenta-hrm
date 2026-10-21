@@ -9,6 +9,11 @@ class Employee(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee_code = models.CharField(max_length=64, unique=True)
     full_name = models.CharField(max_length=200)
+    date_of_birth = models.DateField(null=True, blank=True)
+    job_title = models.CharField(max_length=200, blank=True, default="")
+    level = models.CharField(max_length=100, blank=True, default="")
+    start_date = models.DateField(null=True, blank=True)
+    contract_expiry = models.DateField(null=True, blank=True)
 
 
 class EmployeeAssignment(models.Model):
