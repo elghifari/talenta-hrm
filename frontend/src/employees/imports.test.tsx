@@ -34,7 +34,7 @@ test('CSV stays in memory and is uploaded as multipart before an incoming-only s
   await user.upload(input, new File(['Nama Lengkap,ID Karyawan\nKaryawan B,0002\n'], 'karyawan.csv', { type: 'text/csv' }));
   await user.click(screen.getByRole('button', { name: 'Pratinjau CSV' }));
   expect(await screen.findByRole('heading', { name: 'Pratinjau batch upload' })).toBeInTheDocument();
-  expect(await screen.findByText('Karyawan B')).toBeInTheDocument();
+  expect(await screen.findByText('Karyawan B', { selector: 'strong' })).toBeInTheDocument();
   expect(screen.getByText('New')).toBeInTheDocument();
   expect(screen.queryByText('Karyawan A')).not.toBeInTheDocument();
   const writes = fetcher.mock.calls.filter(([path]) => path.includes('import-preview'));

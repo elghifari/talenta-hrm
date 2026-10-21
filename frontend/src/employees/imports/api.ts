@@ -28,6 +28,11 @@ export async function previewCsv(request: typeof apiRequest, file: File, signal:
   const body = new FormData(); body.append('file', file);
   return decodeBatch(await request('/api/employees/import-preview/', { method: 'POST', body, signal }));
 }
+export async function confirmBatch(request: typeof apiRequest, id: string, signal: AbortSignal) {
+  const value = await request('/api/employees/imports/' + encodeURIComponent(id) + '/confirm/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}', signal });
+  try { const batch = decodeBatch(value); if (batch.state !== 'committed') throw new Error('Receipt missing'); return batch; }
+  catch { throw new ApiError('protocol', 200, null, 'uncertain'); }
+}
 export function importError(error: unknown) {
   if (error instanceof ApiError) {
     if (error.status === 404 || error.status === 410) return 'Pratinjau tidak tersedia atau kedaluwarsa. Unggah CSV kembali.';
