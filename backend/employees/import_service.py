@@ -1,12 +1,15 @@
 from datetime import timedelta
 
+from audit.models import AuditEvent
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ValidationError
 
-from .imports import parse_rows, summarize
-from .models import EmployeeImportBatch
+from .imports import parse_rows, snapshot, summarize
+from .models import Employee, EmployeeImportBatch
+from .serializers import EmployeeSerializer
 
 
 class PreviewExpired(APIException):
@@ -50,3 +53,64 @@ def create_preview(request, upload):
         expires_at=timezone.now() + timedelta(minutes=15),
         rows=rows,
     )
+
+
+class ImportConflict(APIException):
+    status_code = 409
+    default_detail = (
+        "Data berubah sejak pratinjau. Unggah CSV kembali untuk memeriksa perubahan terbaru."
+    )
+
+
+def commit_batch(request, batch_id):
+    try:
+        with transaction.atomic():
+            batch = get_batch(request, batch_id, lock=True)
+            if batch.result is not None:
+                return batch
+            if any(row["status"] == "error" for row in batch.rows):
+                raise ValidationError(
+                    {"detail": "Perbaiki baris bermasalah lalu unggah CSV kembali."}
+                )
+            records = {
+                record.employee_code: record
+                for record in Employee.objects.select_for_update()
+                .filter(employee_code__in=[row["employee_code"] for row in batch.rows])
+                .order_by("employee_code")
+            }
+            writes = []
+            for row in batch.rows:
+                current = records.get(row["employee_code"])
+                if snapshot(current) != row["current"]:
+                    raise ImportConflict()
+                if row["status"] == "unchanged":
+                    continue
+                serializer = EmployeeSerializer(
+                    current,
+                    data=row["incoming"],
+                    partial=current is not None,
+                    context={"request": request},
+                )
+                serializer.is_valid(raise_exception=True)
+                writes.append((row["status"], serializer))
+            for status, serializer in writes:
+                employee = serializer.save()
+                AuditEvent.objects.create(
+                    actor=request.user,
+                    action="employee.created" if status == "new" else "employee.updated",
+                    target_id=employee.pk,
+                )
+            batch.result = summarize(batch.rows)
+            batch.rows = []
+            batch.committed_at = timezone.now()
+            batch.save(update_fields=["result", "rows", "committed_at"])
+            return batch
+    except IntegrityError as error:
+        cause = error.__cause__
+        if (
+            getattr(cause, "sqlstate", None) == "23505"
+            and cause.diag.table_name == Employee._meta.db_table
+            and cause.diag.constraint_name == "employees_employee_employee_code_key"
+        ):
+            raise ImportConflict() from error
+        raise
