@@ -15,6 +15,16 @@ class Employee(models.Model):
     start_date = models.DateField(null=True, blank=True)
     contract_expiry = models.DateField(null=True, blank=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(start_date__isnull=True)
+                | models.Q(contract_expiry__isnull=True)
+                | models.Q(contract_expiry__gte=models.F("start_date")),
+                name="valid_employee_contract_dates",
+            )
+        ]
+
 
 class EmployeeAssignment(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.PROTECT, related_name="assignments")

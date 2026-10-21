@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 
 from accounts.capabilities import employee_capabilities
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Employee
@@ -27,6 +28,19 @@ class EmployeeSerializer(serializers.ModelSerializer):
                     {name: ["Unknown or read-only field."] for name in sorted(rejected)}
                 )
         return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        birth = attrs.get("date_of_birth", getattr(self.instance, "date_of_birth", None))
+        start = attrs.get("start_date", getattr(self.instance, "start_date", None))
+        expiry = attrs.get("contract_expiry", getattr(self.instance, "contract_expiry", None))
+        errors = {}
+        if birth and birth > timezone.localdate():
+            errors["date_of_birth"] = "Tanggal lahir tidak boleh di masa depan."
+        if start and expiry and expiry < start:
+            errors["contract_expiry"] = "Kontrak berakhir sebelum tanggal masuk."
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs
 
     def update(self, instance, validated_data):
         for name, value in validated_data.items():
