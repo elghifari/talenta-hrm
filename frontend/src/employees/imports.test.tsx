@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { App } from '../app/App';
 
@@ -43,4 +43,31 @@ test('CSV stays in memory and is uploaded as multipart before an incoming-only s
   expect(options.body).toBeInstanceOf(FormData);
   expect(new Headers(options.headers).has('Content-Type')).toBe(false);
   expect(fetcher.mock.calls.some(([path]) => path.endsWith('/confirm/'))).toBe(false);
+});
+
+const updated = { ...draft.rows[0], row: 3, employee_code: '0001', full_name: 'Karyawan A', status: 'update', current: { ...incoming, employee_code: '0001', full_name: 'Karyawan A', job_title: 'Terapis', level: 'Level 1' }, incoming: { ...incoming, employee_code: '0001', full_name: 'Karyawan A', job_title: 'Terapis Senior', level: 'Level 2' }, changes: ['job_title', 'level'] };
+const mixed = { ...draft, rows: [draft.rows[0], updated], summary: { new: 1, update: 1, unchanged: 0, error: 0 } };
+
+test('review non-name changes in expandable rows before one explicit confirmation', async () => {
+  const receipt = { ...mixed, state: 'committed', rows: [] };
+  const fetcher = vi.fn(async (path: string) => path.endsWith('/confirm/') ? Response.json(receipt) : path.includes('/imports/') ? Response.json(mixed) : auth(path));
+  vi.stubGlobal('fetch', fetcher); const user = userEvent.setup();
+  render(<App initialEntries={['/employees/imports/' + draft.id]} />);
+  expect(await screen.findByText('ID Karyawan existing terdeteksi, apakah anda ingin meng-update informasi karyawan berikut?')).toBeInTheDocument();
+  expect(screen.getByText('0001 - Karyawan A')).toBeInTheDocument();
+  const row = screen.getByText('Upd').parentElement!;
+  const details = row.querySelector('details')!;
+  expect(details).not.toHaveAttribute('open');
+  await user.click(within(row).getByText('Lihat perubahan'));
+  expect(details).toHaveAttribute('open');
+  expect(within(row).getByRole('columnheader', { name: 'Saat ini' })).toBeInTheDocument();
+  expect(within(row).getByText('Terapis Senior')).toBeInTheDocument();
+  expect(within(row).queryByRole('rowheader', { name: 'Tanggal lahir' })).not.toBeInTheDocument();
+  await user.click(within(row).getByRole('button', { name: 'Lihat semua kolom' }));
+  expect(within(row).getByRole('rowheader', { name: 'Tanggal lahir' })).toBeInTheDocument();
+  expect(details.querySelector('del,s')).toBeNull();
+  expect(row.querySelector('.import-marker')?.closest('details')).toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Konfirmasi upload' }));
+  expect(await screen.findByRole('heading', { name: 'Batch upload tersimpan' })).toBeInTheDocument();
+  expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/confirm/'))).toHaveLength(1);
 });
