@@ -27,7 +27,8 @@ def upload(client, content):
 
 def mixed_csv():
     return (
-        "\ufeff Jabatan , ID Karyawan ,Nama Lengkap,Level,Tanggal Lahir,Tanggal Masuk,Kontrak Berakhir\r\n"
+        "\ufeff Jabatan , ID Karyawan ,Nama Lengkap,Level,Tanggal Lahir,"
+        "Tanggal Masuk,Kontrak Berakhir\r\n"
         'Terapis Senior,0001,"Karyawan A, Contoh",Level 2,1996-04-12,2024-01-01,2027-12-31\r\n'
         "Administrasi,0002,Karyawan Baru,Level 1,1998-03-21,2026-11-01,2027-10-31\r\n"
         "Terapis,0003,Karyawan Tetap,Level 1,1994-03-18,2022-07-01,2027-06-30\r\n"

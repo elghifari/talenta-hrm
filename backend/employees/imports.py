@@ -143,7 +143,7 @@ def parse_rows(upload, request):
         )
         rows.append(
             {
-                "row_number": row_number,
+                "row": row_number,
                 "employee_code": code,
                 "full_name": incoming["full_name"],
                 "status": status,

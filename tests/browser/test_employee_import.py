@@ -21,11 +21,12 @@ def open_preview(page, login):
     page.get_by_label("File CSV", exact=True).set_input_files(
         {"name": "karyawan.csv", "mimeType": "text/csv", "buffer": CSV.encode()}
     )
-    with page.expect_response(lambda response: "/api/employees/import-preview/" in response.url) as pending:
+    with page.expect_response(
+        lambda response: "/api/employees/import-preview/" in response.url
+    ) as pending:
         page.get_by_role("button", name="Pratinjau CSV", exact=True).click()
     response = pending.value
     assert response.status == 201, response.text()
-    print("Preview response keys:", list(response.json()), "row keys:", list(response.json()["rows"][0]))
     expect(page.get_by_role("button", name="Konfirmasi upload", exact=True)).to_be_enabled()
 
 
@@ -38,7 +39,7 @@ def test_mixed_csv_review_persistence_and_responsive_layout(page, login, db_call
     assert db_call(lambda: AuditEvent.objects.count()) == 0
     row = page.locator(".import-line").first
     row.locator("summary").click()
-    expect(row.get_by_text("Terapis Senior", exact=True)).to_be_visible()
+    expect(row.get_by_role("cell", name="Terapis Senior", exact=True)).to_be_visible()
     row.get_by_role("button", name="Lihat semua kolom", exact=True).click()
     expect(row.get_by_role("rowheader", name="Tanggal lahir", exact=True)).to_be_visible()
     assert page.locator("del,s").count() == 0
