@@ -71,3 +71,21 @@ test('review non-name changes in expandable rows before one explicit confirmatio
   expect(await screen.findByRole('heading', { name: 'Batch upload tersimpan' })).toBeInTheDocument();
   expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/confirm/'))).toHaveLength(1);
 });
+
+test('unknown confirmation outcome locks writes and reads the receipt without replay', async () => {
+  let committed = false;
+  const receipt = { ...mixed, state: 'committed', rows: [] };
+  const fetcher = vi.fn(async (path: string) => {
+    if (path.endsWith('/confirm/')) { committed = true; throw new TypeError('Response lost'); }
+    return path.includes('/imports/') ? Response.json(committed ? receipt : mixed) : auth(path);
+  });
+  vi.stubGlobal('fetch', fetcher); const user = userEvent.setup();
+  render(<App initialEntries={['/employees/imports/' + draft.id]} />);
+  await user.click(await screen.findByRole('button', { name: 'Konfirmasi upload' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('belum dapat dipastikan');
+  expect(screen.getByRole('button', { name: 'Konfirmasi upload' })).toBeDisabled();
+  expect(screen.queryByText(/Belum ada data pegawai yang disimpan/)).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Periksa hasil' }));
+  expect(await screen.findByRole('heading', { name: 'Batch upload tersimpan' })).toBeInTheDocument();
+  expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/confirm/'))).toHaveLength(1);
+});
