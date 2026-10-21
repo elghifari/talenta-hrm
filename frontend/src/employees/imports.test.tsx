@@ -14,8 +14,8 @@ function auth(path: string) {
 test('HR has adjacent add and batch upload actions with ID Karyawan naming', async () => {
   vi.stubGlobal('fetch', vi.fn(async (path: string) => auth(path)));
   render(<App initialEntries={['/employees']} />);
-  const upload = await screen.findByRole('link', { name: 'batch upload', exact: true });
+  const upload = await screen.findByRole('link', { name: 'batch upload' });
   expect(upload).toHaveAttribute('href', '/employees/import');
-  expect(upload.parentElement).toBe(screen.getByRole('link', { name: 'Tambah pegawai', exact: true }).parentElement);
-  expect(screen.getByRole('columnheader', { name: 'ID Karyawan', exact: true })).toBeInTheDocument();
+  expect(upload.parentElement).toBe(screen.getByRole('link', { name: 'Tambah pegawai' }).parentElement);
+  expect(await screen.findByRole('columnheader', { name: 'ID Karyawan' })).toBeInTheDocument();
 });
