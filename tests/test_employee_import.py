@@ -74,3 +74,27 @@ def test_preview_maps_reordered_headers_without_employee_writes(hr, existing):
     reload = client.get(f"/api/employees/imports/{body['id']}/")
     assert reload.status_code == 200
     assert reload.json()["rows"] == body["rows"]
+
+
+def test_confirm_is_atomic_audited_and_idempotent(hr, existing):
+    from employees.models import EmployeeImportBatch
+
+    client, user = hr
+    draft = upload(client, mixed_csv()).json()
+    endpoint = f"/api/employees/imports/{draft['id']}/confirm/"
+    first = client.post(endpoint, {}, content_type="application/json")
+    assert first.status_code == 200
+    assert first.json()["state"] == "committed"
+    assert first.json()["summary"] == {"new": 1, "update": 1, "unchanged": 1, "error": 0}
+    existing.refresh_from_db()
+    assert existing.job_title == "Terapis Senior" and existing.level == "Level 2"
+    assert str(existing.contract_expiry) == "2027-12-31"
+    assert Employee.objects.get(employee_code="0002").date_of_birth.isoformat() == "1998-03-21"
+    assert Employee.objects.count() == 4
+    events = list(AuditEvent.objects.order_by("action").values_list("action", "actor_id"))
+    assert events == [("employee.created", user.pk), ("employee.updated", user.pk)]
+    second = client.post(endpoint, {}, content_type="application/json")
+    assert second.status_code == 200 and second.json() == first.json()
+    assert AuditEvent.objects.count() == 2
+    assert client.get(f"/api/employees/imports/{draft['id']}/").json() == first.json()
+    assert EmployeeImportBatch.objects.get(pk=draft["id"]).rows == []
