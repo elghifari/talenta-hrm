@@ -10,6 +10,12 @@ class Employee(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee_code = models.CharField(max_length=64, unique=True)
     full_name = models.CharField(max_length=200)
+    branch = models.ForeignKey(
+        "organization.Branch", null=True, blank=True, on_delete=models.PROTECT
+    )
+    division = models.ForeignKey(
+        "organization.Division", null=True, blank=True, on_delete=models.PROTECT
+    )
     date_of_birth = models.DateField(null=True, blank=True)
     job_title = models.CharField(max_length=200, blank=True, default="")
     level = models.CharField(max_length=100, blank=True, default="")

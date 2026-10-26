@@ -1,0 +1,27 @@
+.personnel-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 30px; }
+.personnel-metric { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-width: 0; padding: 22px; background: white; border: 1px solid #cbd4dd; border-top: 4px solid #163049; border-radius: 5px; color: #163049; text-decoration: none; }
+a.personnel-metric:hover { border-color: #315a85; background: #f2f5f8; }
+.personnel-metric > span:first-child { font-size: .85rem; font-weight: 600; }
+.personnel-metric strong { font-size: 2rem; line-height: 1.2; font-weight: 650; font-variant-numeric: tabular-nums; }
+.personnel-metric-link { margin-top: auto; font-size: .78rem; color: #526171; }
+.personnel-contracts { background: white; border: 1px solid #cbd4dd; border-radius: 5px; overflow: hidden; scroll-margin-top: 24px; }
+.personnel-contracts > header { padding: 18px 22px; background: #163049; color: white; }
+.personnel-contracts h2 { margin: 0 0 4px; }
+.personnel-contracts header p { margin: 0; font-size: .8rem; color: #d1dce6; }
+.personnel-contract-id { display: block; font-size: .78rem; color: #526171; padding-bottom: 8px; }
+.personnel-contract-table { overflow-x: auto; }
+.personnel-contract-table th:first-child { width: 38%; }
+.personnel-contract-table time { white-space: nowrap; }
+.personnel-contract-empty { margin: 0; padding: 28px 22px; color: #526171; font-size: .875rem; }
+@media (max-width: 1100px) { .personnel-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px) {
+  .personnel-metrics { gap: 12px; }
+  .personnel-metric { padding: 16px; }
+  .personnel-contract-table table { min-width: 560px; }
+  .personnel-contract-table table, .personnel-contract-table tbody, .personnel-contract-table thead { display: table; width: 100%; }
+  .personnel-contract-table thead { display: table-header-group; }
+  .personnel-contract-table tbody { display: table-row-group; }
+  .personnel-contract-table tr { display: table-row; }
+  .personnel-contract-table td, .personnel-contract-table th { display: table-cell; padding: 10px 16px; }
+}
+@media (max-width: 360px) { .personnel-metrics { grid-template-columns: minmax(0, 1fr); } }

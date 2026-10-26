@@ -39,3 +39,4 @@ test-results/
 playwright-report/
 *.[mM][dD]
 !/readme.md
+.impeccable

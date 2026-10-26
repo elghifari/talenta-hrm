@@ -24,10 +24,10 @@ export function ImportUploadPage() {
   }
   if (!identity?.capabilities.employees_write) return <PageTitle>Akses tidak diizinkan</PageTitle>;
   return <><Link className="back" to="/employees">Kembali ke data pegawai</Link>
-    <div className="page-heading"><div><PageTitle>Batch upload</PageTitle><p>Tambahkan atau perbarui karyawan melalui CSV. Periksa perubahan sebelum menyimpan.</p></div></div>
+    <div className="page-heading"><div><PageTitle>Batch Upload</PageTitle><p>Tambahkan atau perbarui karyawan melalui CSV. Periksa perubahan sebelum menyimpan.</p></div></div>
     <form className="record" onSubmit={submit}>
       <p><a className="back" href="/api/employees/import-template/" download>Unduh template CSV</a></p>
-      <p className="hint" id="csv-help">CSV UTF-8, maksimal 1 MiB dan 500 baris. Urutan kolom bebas. ID Karyawan dan Nama Lengkap wajib ada. Simpan ID sebagai teks agar nol di depan tetap ada.</p>
+      <p className="hint" id="csv-help">CSV UTF-8, maksimal 1 MiB dan 500 baris. Urutan kolom bebas. ID Karyawan dan Nama Lengkap wajib ada.</p>
       <p className="hint">Tanggal menggunakan YYYY-MM-DD. Kolom atau sel opsional yang kosong tidak menghapus data lama.</p>
       <div className="form-field"><label htmlFor="csv-file">File CSV</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help" disabled={busy} onChange={event => { setFile(event.target.files?.[0] ?? null); setError(''); }} /></div>
       {error && <p className="error" role="alert">{error}</p>}

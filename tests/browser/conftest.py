@@ -52,7 +52,7 @@ def synthetic_data(django_user_model):
 def login(live_server, synthetic_data):
     def perform(page, role="hr", url=None):
         account = synthetic_data.users[role]
-        page.goto((url or live_server.url) + "/login")
+        page.goto((url or live_server.url) + "/employees")
         page.get_by_label("Email", exact=True).fill(account.email)
         page.get_by_label("Sandi", exact=True).fill(account.password)
         page.get_by_role("button", name="Masuk", exact=True).click()

@@ -8,8 +8,9 @@ Talenta HRM is in active development, starting with employee records, unit-based
 
 - HR can sign in through the React interface and create, view and update employee records.
 - Unit managers can read employees in units they have been granted access to.
+- Personnel includes a dashboard, employee records and Cabang/Divisi management.
 - HR can read compensation history separately from employee identity records.
-- Employee changes produce audit records. PostgreSQL constraints protect effective-dated assignments and compensation periods.
+- Employee and organization changes are audited.
 
 ## Local development
 
@@ -153,7 +154,7 @@ uv run --group browser playwright install chromium
 uv run --group browser pytest --run-browser tests/browser -q
 ```
 
-The browser suite uses real Chromium, Django's live server and pytest's disposable PostgreSQL database. It creates synthetic accounts and records only there, then tears them down. Port 5173 must be free because the suite starts its own Vite proxy. Ordinary `uv run pytest -q` excludes browser tests. CI provisions Chromium's Linux dependencies explicitly in `.github/workflows/backend.yml`.
+The browser suite uses real Chromium, Django's live server and pytest's disposable PostgreSQL database. It creates synthetic accounts and records only there, then tears them down. Ordinary `uv run pytest -q` excludes browser tests. CI provisions Chromium's Linux dependencies explicitly in `.github/workflows/backend.yml`.
 
 Keep screenshots and test artifacts synthetic. Local screenshots are ignored under `.local/ui-review/`; browser authentication state is not uploaded.
 

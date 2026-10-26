@@ -6,10 +6,12 @@ import { useSession } from '../auth/SessionProvider';
 import { changedFields, saveEmployee } from './api';
 import { decodeEmployee, type Employee, type EmployeeInput } from './types';
 import { useUnsavedChanges } from './useUnsavedChanges';
+import { EmployeeGroupingFields } from './EmployeeGroupingFields';
+import { employeeFields } from './fields';
 type Errors = Partial<Record<keyof EmployeeInput, string>>;
 export function EmployeeForm({ employee }: { employee?: Employee }) {
   const original = employee ?? { employee_code: '', full_name: '' };
-  const [values, setValues] = useState<EmployeeInput>({ employee_code: original.employee_code, full_name: original.full_name });
+  const [values, setValues] = useState<EmployeeInput>({ employee_code: original.employee_code, full_name: original.full_name, branch: employee?.branch ?? null, division: employee?.division ?? null, date_of_birth: employee?.date_of_birth ?? null, job_title: employee?.job_title ?? '', level: employee?.level ?? '', start_date: employee?.start_date ?? null, contract_expiry: employee?.contract_expiry ?? null });
   const [errors, setErrors] = useState<Errors>({}); const [summary, setSummary] = useState('');
   const [busy, setBusy] = useState(false); const [confirmed, setConfirmed] = useState(false); const [uncertain, setUncertain] = useState(false);
   const { request } = useSession(); const navigate = useNavigate();
@@ -27,7 +29,9 @@ export function EmployeeForm({ employee }: { employee?: Employee }) {
   async function submit(event: FormEvent) {
     event.preventDefault(); if (busy || confirmed || uncertain) return;
     const next: Errors = {};
-    const input = { employee_code: values.employee_code.trim(), full_name: values.full_name.trim() };
+    const input: EmployeeInput = { employee_code: values.employee_code.trim(), full_name: values.full_name.trim(), ...(employee || values.branch ? { branch: values.branch ?? null } : {}), ...(employee || values.division ? { division: values.division ?? null } : {}) };
+    for (const field of ['date_of_birth', 'start_date', 'contract_expiry'] as const) if (employee || values[field]) input[field] = values[field] || null;
+    for (const field of ['job_title', 'level'] as const) if (employee || values[field]?.trim()) input[field] = values[field]?.trim() ?? '';
     if (!input.employee_code) next.employee_code = 'Kode pegawai wajib diisi.';
     else if (input.employee_code.length > 64) next.employee_code = 'Kode pegawai maksimal 64 karakter.';
     if (!input.full_name) next.full_name = 'Nama lengkap wajib diisi.';
@@ -54,7 +58,7 @@ export function EmployeeForm({ employee }: { employee?: Employee }) {
         const fields: Errors = {}; const other: string[] = [];
         for (const [key, value] of Object.entries(error.body)) {
           const text = Array.isArray(value) && value.every(x => typeof x === 'string') ? value.join(' ') : typeof value === 'string' ? value : 'Data tidak valid.';
-          if (key === 'employee_code' || key === 'full_name') fields[key] = text; else other.push(text);
+          if (employeeFields.some(field => field.key === key) || key === 'branch' || key === 'division') fields[key as keyof EmployeeInput] = text; else other.push(text);
         }
         showErrors(fields); setSummary(other.join(' '));
       } else { setSummary(errorText(error)); if (error instanceof ApiError && error.writeOutcome === 'uncertain') setUncertain(true); }
@@ -65,8 +69,10 @@ export function EmployeeForm({ employee }: { employee?: Employee }) {
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Perubahan belum disimpan"><p>Perubahan belum disimpan. Tinggalkan halaman ini?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap mengedit</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     {summary && <div className={confirmed ? 'notice' : 'error'} role="alert"><p>{summary}</p>{(confirmed || uncertain) && <Link to={employee ? '/employees/' + employee.id : '/employees'}>Periksa data tersimpan</Link>}</div>}
     {confirmed ? <Link to={employee ? '/employees/' + employee.id : '/employees'}>Buka data pegawai</Link> : <form ref={form} className="record" onSubmit={submit} noValidate>
-      <div className="form-field"><label htmlFor="employee-code">Kode pegawai</label><input id="employee-code" name="employee_code" value={values.employee_code} maxLength={64} required aria-invalid={Boolean(errors.employee_code)} aria-describedby="code-hint code-error" disabled={busy || uncertain} onChange={e => setValues(v => ({ ...v, employee_code: e.target.value }))} /><p className="hint" id="code-hint">Gunakan kode unik. Nol di depan tetap disimpan.</p>{errors.employee_code && <p className="error" id="code-error">{errors.employee_code}</p>}</div>
+      <div className="form-field"><label htmlFor="employee-code">Kode pegawai</label><input id="employee-code" name="employee_code" value={values.employee_code} maxLength={64} required aria-invalid={Boolean(errors.employee_code)} aria-describedby={errors.employee_code ? 'code-error' : undefined} disabled={busy || uncertain} onChange={e => setValues(v => ({ ...v, employee_code: e.target.value }))} />{errors.employee_code && <p className="error" id="code-error">{errors.employee_code}</p>}</div>
       <div className="form-field"><label htmlFor="employee-name">Nama lengkap</label><input id="employee-name" name="full_name" value={values.full_name} maxLength={200} required aria-invalid={Boolean(errors.full_name)} aria-describedby={errors.full_name ? 'name-error' : undefined} disabled={busy || uncertain} onChange={e => setValues(v => ({ ...v, full_name: e.target.value }))} />{errors.full_name && <p className="error" id="name-error">{errors.full_name}</p>}</div>
+      <EmployeeGroupingFields values={values} employee={employee} disabled={busy || uncertain} errors={errors} change={(key, value) => setValues(previous => key === 'branch' && previous.branch !== value ? { ...previous, branch: value, division: null } : { ...previous, [key]: value })} />
+      <fieldset className="employee-profile-fields"><legend>Data kepegawaian</legend>{employeeFields.filter(field => field.key !== 'employee_code' && field.key !== 'full_name').map(field => <div className="form-field" key={field.key}><label htmlFor={'employee-' + field.key}>{field.label}</label><input id={'employee-' + field.key} name={field.key} type={field.type} maxLength={'maxLength' in field ? field.maxLength : undefined} value={values[field.key] ?? ''} disabled={busy || uncertain} aria-invalid={Boolean(errors[field.key])} aria-describedby={errors[field.key] ? field.key + '-error' : undefined} onChange={event => { const value = event.target.value; setValues(previous => ({ ...previous, [field.key]: field.type === 'date' ? value || null : value })); }} />{errors[field.key] && <p className="error" id={field.key + '-error'}>{errors[field.key]}</p>}</div>)}</fieldset>
       <div className="form-actions"><button className="primary" disabled={busy || uncertain || (Boolean(employee) && !dirty)} type="submit">{busy ? 'Menyimpan…' : employee ? 'Simpan perubahan' : 'Simpan pegawai'}</button><button type="button" disabled={busy} onClick={() => navigate(employee ? '/employees/' + employee.id : '/employees')}>Batal</button></div>
     </form>}
   </>;

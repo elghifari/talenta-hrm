@@ -12,10 +12,10 @@ function auth(path: string) {
   return Response.json([employee]);
 }
 
-test('HR has adjacent add and batch upload actions with ID Karyawan naming', async () => {
+test('HR has adjacent add and Batch Upload actions with ID Karyawan naming', async () => {
   vi.stubGlobal('fetch', vi.fn(async (path: string) => auth(path)));
   render(<App initialEntries={['/employees']} />);
-  const upload = await screen.findByRole('link', { name: 'batch upload' });
+  const upload = await screen.findByRole('link', { name: 'Batch Upload' });
   expect(upload).toHaveAttribute('href', '/employees/import');
   expect(upload.parentElement).toBe(screen.getByRole('link', { name: 'Tambah pegawai' }).parentElement);
   expect(await screen.findByRole('columnheader', { name: 'ID Karyawan' })).toBeInTheDocument();
@@ -33,7 +33,7 @@ test('CSV stays in memory and is uploaded as multipart before an incoming-only s
   expect(screen.getByRole('button', { name: 'Pratinjau CSV' })).toBeDisabled();
   await user.upload(input, new File(['Nama Lengkap,ID Karyawan\nKaryawan B,0002\n'], 'karyawan.csv', { type: 'text/csv' }));
   await user.click(screen.getByRole('button', { name: 'Pratinjau CSV' }));
-  expect(await screen.findByRole('heading', { name: 'Pratinjau batch upload' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Pratinjau Batch Upload' })).toBeInTheDocument();
   expect(await screen.findByText('Karyawan B', { selector: 'strong' })).toBeInTheDocument();
   expect(screen.getByText('New')).toBeInTheDocument();
   expect(screen.queryByText('Karyawan A')).not.toBeInTheDocument();
@@ -68,7 +68,7 @@ test('review non-name changes in expandable rows before one explicit confirmatio
   expect(details.querySelector('del,s')).toBeNull();
   expect(row.querySelector('.import-marker')?.closest('details')).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Konfirmasi upload' }));
-  expect(await screen.findByRole('heading', { name: 'Batch upload tersimpan' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Batch Upload tersimpan' })).toBeInTheDocument();
   expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/confirm/'))).toHaveLength(1);
 });
 
@@ -86,6 +86,6 @@ test('unknown confirmation outcome locks writes and reads the receipt without re
   expect(screen.getByRole('button', { name: 'Konfirmasi upload' })).toBeDisabled();
   expect(screen.queryByText(/Belum ada data pegawai yang disimpan/)).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Periksa hasil' }));
-  expect(await screen.findByRole('heading', { name: 'Batch upload tersimpan' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Batch Upload tersimpan' })).toBeInTheDocument();
   expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/confirm/'))).toHaveLength(1);
 });

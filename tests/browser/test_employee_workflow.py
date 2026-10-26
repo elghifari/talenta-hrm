@@ -69,7 +69,11 @@ def test_dirty_navigation_and_phone_menu(page, login):
     expect(page.get_by_role("heading", name="Data pegawai", exact=True)).to_be_visible()
     page.set_viewport_size({"width": 390, "height": 844})
     page.get_by_role("button", name="Menu", exact=True).click()
-    expect(page.get_by_role("link", name="Personnel", exact=True)).to_be_visible()
+    expect(
+        page.get_by_role("navigation", name="Modul").get_by_role(
+            "link", name="Personnel", exact=True
+        )
+    ).to_be_visible()
     page.keyboard.press("Escape")
     expect(page.get_by_role("button", name="Menu", exact=True)).to_be_focused()
     for width in [360, 390, 768, 1280, 1440]:

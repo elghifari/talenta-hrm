@@ -87,7 +87,7 @@ def test_invalid_credentials_then_logout_prevents_protected_reads(
     expect(page.get_by_text("Email atau sandi tidak sesuai.")).to_be_visible()
     page.get_by_label("Sandi", exact=True).fill(synthetic_data.users["hr"].password)
     page.get_by_role("button", name="Masuk", exact=True).click()
-    expect(page.get_by_role("heading", name="Data pegawai", exact=True)).to_be_visible()
+    expect(page.get_by_role("heading", name="Personnel", exact=True)).to_be_visible()
     page.get_by_role("button", name="Keluar", exact=True).click()
     expect(page.get_by_role("button", name="Masuk", exact=True)).to_be_visible()
     assert page.context.request.get(live_server.url + "/api/auth/me/").status == 403

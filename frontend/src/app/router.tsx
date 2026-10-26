@@ -7,7 +7,9 @@ import { EmployeeEditPage } from '../employees/EmployeeEditPage';
 import { EmployeeDetailPage } from '../employees/EmployeeDetailPage';
 import { ImportUploadPage } from '../employees/imports/ImportUploadPage';
 import { ImportPreviewPage } from '../employees/imports/ImportPreviewPage';
+import { GroupManagementPage } from '../employees/OrganizationPage';
 import { AppShell } from './AppShell';
+import { PersonnelPage } from '../employees/PersonnelPage';
 function Gate() {
   const session = useSession();
   if (session.status === 'checking') return <main className="session-state" role="status">Memeriksa sesi…</main>;
@@ -17,11 +19,13 @@ function Gate() {
 }
 export function makeRouter(initialEntries?: string[]) {
   const routes = [{ element: <Gate />, children: [
-    { path: '/', element: <Navigate replace to="/employees" /> },
-    { path: '/login', element: <Navigate replace to="/employees" /> },
+    { path: '/', element: <Navigate replace to="/personnel" /> },
+    { path: '/login', element: <Navigate replace to="/personnel" /> },
+    { path: '/personnel', element: <PersonnelPage />, handle: { breadcrumb: false } },
     { path: '/employees', element: <EmployeeListPage /> },
     { path: '/employees/new', element: <EmployeeCreatePage /> },
     { path: '/employees/import', element: <ImportUploadPage /> },
+    { path: '/employees/groups', element: <GroupManagementPage /> },
     { path: '/employees/imports/:batchId', element: <ImportPreviewPage /> },
     { path: '/employees/:id/edit', element: <EmployeeEditPage /> },
     { path: '/employees/:id', element: <EmployeeDetailPage /> },

@@ -4,6 +4,10 @@ export function changedFields(original: EmployeeInput, current: EmployeeInput): 
   const changes: Partial<EmployeeInput> = {};
   if (original.employee_code !== current.employee_code) changes.employee_code = current.employee_code;
   if (original.full_name !== current.full_name) changes.full_name = current.full_name;
+  if ('branch' in current && (original.branch ?? null) !== (current.branch ?? null)) changes.branch = current.branch ?? null;
+  if ('division' in current && (original.division ?? null) !== (current.division ?? null)) changes.division = current.division ?? null;
+  for (const field of ['date_of_birth', 'start_date', 'contract_expiry'] as const) if (field in current && (original[field] ?? null) !== (current[field] ?? null)) changes[field] = current[field] ?? null;
+  for (const field of ['job_title', 'level'] as const) if (field in current && (original[field] ?? '') !== (current[field] ?? '')) changes[field] = current[field] ?? '';
   return changes;
 }
 export async function saveEmployee(request: typeof apiRequest, input: Partial<EmployeeInput>, id?: string, signal?: AbortSignal) {

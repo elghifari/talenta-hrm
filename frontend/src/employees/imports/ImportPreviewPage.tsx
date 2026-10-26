@@ -48,7 +48,7 @@ function Preview({ batchId }: { batchId: string }) {
   }
   const committed = batch?.state === 'committed';
   return <><Link className="back" to={committed ? '/employees' : '/employees/import'}>{committed ? 'Kembali ke data pegawai' : 'Pilih CSV lain'}</Link>
-    <div className="page-heading"><div><PageTitle key={String(committed)}>{committed ? 'Batch upload tersimpan' : 'Pratinjau batch upload'}</PageTitle>{batch && <p>{committed ? 'Data pegawai telah disimpan. Unggah ulang tidak diperlukan.' : uncertain ? 'Hasil penyimpanan belum pasti. Periksa hasil sebelum mengunggah ulang.' : 'Hanya karyawan dari CSV ini yang ditampilkan. Belum ada data pegawai yang disimpan.'}</p>}</div></div>
+    <div className="page-heading"><div><PageTitle key={String(committed)}>{committed ? 'Batch Upload tersimpan' : 'Pratinjau Batch Upload'}</PageTitle>{batch && <p>{committed ? 'Data pegawai telah disimpan. Unggah ulang tidak diperlukan.' : uncertain ? 'Hasil penyimpanan belum pasti. Periksa hasil sebelum mengunggah ulang.' : 'Hanya karyawan dari CSV ini yang ditampilkan. Belum ada data pegawai yang disimpan.'}</p>}</div></div>
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Permintaan masih berjalan"><p>Permintaan masih berjalan. Tinggalkan halaman?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap di pratinjau</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     {resource.loading && !receipt && <p role="status">Memuat pratinjau CSV…</p>}
     {Boolean(resource.error) && !receipt && <div role="alert"><p className="error">{importError(resource.error)}</p><button onClick={resource.retry}>Coba lagi</button></div>}

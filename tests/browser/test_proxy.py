@@ -1,5 +1,6 @@
 import os
 import shutil
+import socket
 import subprocess
 import time
 from pathlib import Path
@@ -13,10 +14,15 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 @pytest.fixture
-def vite_origin(live_server, tmp_path):
+def vite_origin(live_server, tmp_path, settings):
     root = Path(__file__).resolve().parents[2]
     executable = root / "frontend" / "node_modules" / "vite" / "bin" / "vite.js"
     env = {**os.environ, "HRM_API_TARGET": live_server.url}
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+    origin = f"http://127.0.0.1:{port}"
+    settings.CSRF_TRUSTED_ORIGINS = [*settings.CSRF_TRUSTED_ORIGINS, origin]
     with (tmp_path / "vite.log").open("w") as log:
         process = subprocess.Popen(
             [
@@ -25,7 +31,7 @@ def vite_origin(live_server, tmp_path):
                 "--host",
                 "127.0.0.1",
                 "--port",
-                "5173",
+                str(port),
                 "--strictPort",
             ],
             cwd=root / "frontend",
@@ -40,14 +46,14 @@ def vite_origin(live_server, tmp_path):
                 if process.poll() is not None:
                     pytest.fail("Vite exited before proxy smoke test; inspect its test log")
                 try:
-                    with urlopen("http://127.0.0.1:5173/api/health/", timeout=1) as response:
+                    with urlopen(origin + "/api/health/", timeout=1) as response:
                         if response.status == 200:
                             break
                 except (OSError, URLError):
                     if time.monotonic() >= deadline:
                         pytest.fail("Vite proxy did not become ready")
                     time.sleep(0.1)
-            yield "http://127.0.0.1:5173"
+            yield origin
         finally:
             if os.name == "nt":
                 subprocess.run(

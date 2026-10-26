@@ -17,7 +17,7 @@ CSV = (
 
 def open_preview(page, login):
     login(page)
-    page.get_by_role("link", name="batch upload", exact=True).click()
+    page.get_by_role("link", name="Batch Upload", exact=True).click()
     page.get_by_label("File CSV", exact=True).set_input_files(
         {"name": "karyawan.csv", "mimeType": "text/csv", "buffer": CSV.encode()}
     )
@@ -55,9 +55,9 @@ def test_mixed_csv_review_persistence_and_responsive_layout(page, login, db_call
         if width in (390, 1440):
             page.screenshot(path=str(captures / f"preview-{width}.png"), full_page=True)
     page.get_by_role("button", name="Konfirmasi upload", exact=True).click()
-    expect(page.get_by_role("heading", name="Batch upload tersimpan", exact=True)).to_be_visible()
+    expect(page.get_by_role("heading", name="Batch Upload tersimpan", exact=True)).to_be_visible()
     page.reload()
-    expect(page.get_by_role("heading", name="Batch upload tersimpan", exact=True)).to_be_visible()
+    expect(page.get_by_role("heading", name="Batch Upload tersimpan", exact=True)).to_be_visible()
     assert db_call(lambda: Employee.objects.count()) == 7
     assert db_call(lambda: Employee.objects.get(employee_code="0001").job_title) == "Terapis Senior"
     assert (
@@ -82,7 +82,7 @@ def test_committed_response_loss_reads_receipt_without_mutation_replay(page, log
     expect(page.get_by_role("button", name="Konfirmasi upload", exact=True)).to_be_disabled()
     expect(page.get_by_role("button", name="Periksa hasil", exact=True)).to_be_visible()
     page.get_by_role("button", name="Periksa hasil", exact=True).click()
-    expect(page.get_by_role("heading", name="Batch upload tersimpan", exact=True)).to_be_visible()
+    expect(page.get_by_role("heading", name="Batch Upload tersimpan", exact=True)).to_be_visible()
     assert len(posts) == 1
     assert db_call(lambda: Employee.objects.count()) == 7
     assert db_call(lambda: AuditEvent.objects.count()) == 2

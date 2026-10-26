@@ -53,7 +53,15 @@ def test_non_hr_accounts_cannot_write_employees_or_read_compensation(django_user
     if role == "KEPALA_UNIT":
         assert response.status_code == 200
         assert response.json() == [
-            {"id": str(employee.pk), "employee_code": "0001", "full_name": "Synthetic Employee"}
+            {
+                "id": str(employee.pk),
+                "employee_code": "0001",
+                "full_name": "Synthetic Employee",
+                "branch": None,
+                "branch_name": None,
+                "division": None,
+                "division_name": None,
+            }
         ]
     else:
         assert response.status_code == 403

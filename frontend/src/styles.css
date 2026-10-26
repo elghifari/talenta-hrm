@@ -15,13 +15,23 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .sidebar { background: #163049; color: #d1dce6; padding: 30px 16px; }
 .brand { font-weight: 700; font-size: 1.15rem; letter-spacing: -.02em; color: white; }
 .brand span { display: block; font-size: .75rem; font-weight: 400; letter-spacing: 0; margin-top: 5px; color: #d1dce6; }
-.nav-label { font-size: .75rem; margin: 36px 12px 10px; }
+.sidebar nav { margin-top: 30px; }
+.nav-label { font-size: .75rem; font-weight: 600; color: #b8c8d8; margin: 0 12px 4px; }
 .sidebar nav a { display: block; padding: 12px; min-height: 46px; border-radius: 4px; text-decoration: none; color: #fff; font-size: .875rem; font-weight: 600; }
 .sidebar nav a.active { background: #2b435a; }
 .workspace { min-width: 0; }
 .app-header { background: white; border-bottom: 1px solid #dbe1e6; min-height: 76px; padding: 12px 36px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.breadcrumb { color: #526171; font-size: .8rem; }
-.account { display: flex; gap: 18px; align-items: center; font-size: .8rem; min-width: 0; }
+
+.account { display: flex; gap: 18px; align-items: center; font-size: .8rem; min-width: 0; margin-left: auto; }
+.sidebar .personnel-links { padding-left: 12px; margin-top: 4px; }
+.sidebar .personnel-links a { font-weight: 400; font-size: .8rem; }
+.breadcrumbs { margin-bottom: 20px; color: #526171; font-size: .8rem; }
+.breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 0; margin: 0; list-style: none; }
+.breadcrumbs li { display: inline-flex; align-items: center; min-height: 44px; overflow-wrap: anywhere; }
+.breadcrumbs li + li::before { content: '/'; margin-right: 10px; }
+.breadcrumbs a { display: inline-flex; align-items: center; min-height: 44px; }
+.employee-profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; padding: 20px 0 0; margin: 24px 0 0; border: 0; border-top: 1px solid #cbd4dd; min-width: 0; }
+.employee-profile-fields legend { padding: 0 10px 0 0; font-weight: 600; }
 .account span { overflow-wrap: anywhere; }
 .account button { flex-shrink: 0; }
 .content { padding: 36px; max-width: 1320px; margin: 0 auto; }
@@ -38,8 +48,11 @@ td { padding: 8px 22px; border-bottom: 1px solid #e1e6eb; overflow-wrap: anywher
 tr:last-child td { border-bottom: 0; }
 td a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
 .employee-code { font-variant-numeric: tabular-nums; color: #536374; font-size: .82rem; letter-spacing: .025em; }
-.footnote { color: #596878; font-size: .75rem; margin-top: 18px; }
+
 .notice { padding: 12px 16px; background: #edf3fa; border: 1px solid #9bafc1; color: #405366; border-radius: 4px; font-size: .85rem; }
+.notice[role="alertdialog"] { background: #fff4f2; border-color: #cf8f88; color: #86271e; }
+.notice[role="alertdialog"] .form-actions > button:last-child { background: #b42318; border-color: #b42318; color: white; }
+.notice[role="alertdialog"] .form-actions > button:last-child:hover { background: #8e1b13; border-color: #8e1b13; }
 .empty { padding: 36px 26px; background: white; border: 1px solid #cbd4dd; text-align: center; }
 .empty p { max-width: 50ch; margin: 0 auto 20px; }
 .record { max-width: 740px; padding: 26px; }
@@ -65,12 +78,13 @@ label { display: block; font-size: .85rem; font-weight: 600; margin: 0 0 7px; }
 .session-state { padding: 40px 24px; }
 .skip-link { position: absolute; top: -100px; left: 12px; background: white; color: #163049; padding: 12px; z-index: 5; }
 .skip-link:focus { top: 12px; }
-@media (max-width: 1000px) { .app-shell { grid-template-columns: 190px minmax(0,1fr); } .content { padding: 28px; } .app-header { padding: 14px 28px; } .breadcrumb { display: none; } }
+@media (max-width: 1000px) { .app-shell { grid-template-columns: 190px minmax(0,1fr); } .content { padding: 28px; } .app-header { padding: 14px 28px; } }
 @media (max-width: 680px) {
+  .employee-profile-fields { grid-template-columns: minmax(0, 1fr); }
   .app-shell { display: flex; flex-direction: column; }
   .sidebar { display: none; padding: 20px; }
   .sidebar.open { display: block; }
-  .sidebar .nav-label { margin-top: 18px; }
+  .sidebar nav { margin-top: 18px; }
   .app-header { padding: 12px 18px; flex-wrap: wrap; gap: 12px; }
   .menu-toggle { display: block; }
   .account { gap: 10px; flex: 1; justify-content: flex-end; }

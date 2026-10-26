@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { errorText } from '../api/client';
 import { useSession } from '../auth/SessionProvider';
+import { Breadcrumbs } from './Breadcrumbs';
 export function AppShell() {
   const session = useSession(); const location = useLocation();
   const [dirty, setDirty] = useState(false);
@@ -12,8 +13,8 @@ export function AppShell() {
   function closeMenu() { setMenu(false); menuButton.current?.focus(); }
   return <div className="app-shell" onKeyDown={event => { if (event.key === 'Escape' && menu) closeMenu(); }}>
     <a className="skip-link" href="#main">Ke konten utama</a>
-    <aside className={'sidebar' + (menu ? ' open' : '')} id="primary-nav"><div className="brand">Talenta HRIS<span>Administrasi kepegawaian</span></div><p className="nav-label">Ruang kerja</p><nav aria-label="Modul"><NavLink to="/employees" onClick={() => setMenu(false)}>Personnel</NavLink></nav></aside>
-    <div className="workspace"><header className="app-header"><span className="breadcrumb">Personnel / Data pegawai</span><button className="menu-toggle" ref={menuButton} aria-expanded={menu} aria-controls="primary-nav" onClick={() => setMenu(x => !x)}>Menu</button><div className="account"><span>{session.identity?.email}</span><button disabled={session.busy} onClick={() => { if (dirty && !window.confirm('Perubahan belum disimpan. Keluar dari akun?')) return; setError(''); session.logout().catch(e => setError(errorText(e))); }}>Keluar</button></div></header>
-    <main id="main" className="content" ref={main}>{error && <p className="error" role="alert">{error}</p>}{session.identity?.capabilities.employees_read ? <Outlet context={{ setDirty }} /> : <><h1>Akses tidak tersedia</h1><p>Akun ini tidak memiliki izin untuk melihat data pegawai.</p><Link to="/login">Periksa akun</Link></>}</main></div>
+    <aside className={'sidebar' + (menu ? ' open' : '')} id="primary-nav"><div className="brand">Talenta HRIS<span>Administrasi kepegawaian</span></div><nav aria-label="Modul"><p className="nav-label">Ruang kerja</p><NavLink to="/personnel" end onClick={() => setMenu(false)}>Personnel</NavLink><div className="personnel-links"><NavLink to="/employees" end onClick={() => setMenu(false)}>Data pegawai</NavLink>{session.identity?.capabilities.employees_write && <NavLink to="/employees/groups" onClick={() => setMenu(false)}>Cabang &amp; Divisi</NavLink>}</div></nav></aside>
+    <div className="workspace"><header className="app-header"><button className="menu-toggle" ref={menuButton} aria-expanded={menu} aria-controls="primary-nav" onClick={() => setMenu(x => !x)}>Menu</button><div className="account"><span>{session.identity?.email}</span><button disabled={session.busy} onClick={() => { if (dirty && !window.confirm('Perubahan belum disimpan. Keluar dari akun?')) return; setError(''); session.logout().catch(e => setError(errorText(e))); }}>Keluar</button></div></header>
+    <main id="main" className="content" ref={main}>{error && <p className="error" role="alert">{error}</p>}{session.identity?.capabilities.employees_read ? <><Breadcrumbs /><Outlet context={{ setDirty }} /></> : <><h1>Akses tidak tersedia</h1><p>Akun ini tidak memiliki izin untuk melihat data pegawai.</p><Link to="/login">Periksa akun</Link></>}</main></div>
   </div>;
 }

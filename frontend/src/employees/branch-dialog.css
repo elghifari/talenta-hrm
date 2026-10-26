@@ -1,0 +1,21 @@
+.branch-dialog { width: min(560px, calc(100% - 32px)); max-height: calc(100dvh - 40px); padding: 0; border: 1px solid #77818c; border-radius: 6px; color: #202630; background: white; box-shadow: 0 16px 48px #102b4033; }
+.branch-dialog::backdrop { background: #102b4080; }
+.branch-dialog form { display: flex; flex-direction: column; max-height: calc(100dvh - 42px); }
+.branch-dialog-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 24px; border-bottom: 1px solid #cbd4dd; }
+.branch-dialog-header h2 { margin: 0; color: #163049; }
+.branch-dialog-header button { display: inline-flex; justify-content: center; align-items: center; padding: 8px; border: 0; min-width: 44px; }
+.branch-dialog-body { padding: 24px; overflow-y: auto; }
+.branch-dialog-divisions { min-width: 0; border: 0; border-top: 1px solid #dbe1e6; margin: 28px 0 0; padding: 16px 0 0; }
+.branch-dialog-divisions legend { font-size: .9rem; font-weight: 600; padding-right: 12px; color: #163049; }
+.branch-dialog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.branch-dialog-row input { min-width: 0; }
+.branch-dialog-row button { flex-shrink: 0; }
+.branch-add-division { margin-top: 4px; }
+.branch-dialog .danger { background: #b42318; border-color: #b42318; color: white; }
+.branch-dialog .danger:hover { background: #8e1b13; border-color: #8e1b13; }
+.branch-pending-deletions { margin-top: 24px; border-top: 1px solid #dbe1e6; padding-top: 12px; }
+.branch-pending-deletions h3 { margin: 0 0 8px; color: #94332a; font-size: .875rem; }
+.branch-pending-deletions > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
+.branch-pending-deletions span { overflow-wrap: anywhere; min-width: 0; }
+.branch-dialog-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 16px 24px; border-top: 1px solid #cbd4dd; background: #f7f9fb; }
+@media (max-width: 600px) { .branch-dialog-header, .branch-dialog-body, .branch-dialog-footer { padding: 16px; } }

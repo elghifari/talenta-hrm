@@ -8,6 +8,9 @@ from .models import Employee
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    branch_name = serializers.CharField(source="branch.name", read_only=True, default=None)
+    division_name = serializers.CharField(source="division.name", read_only=True, default=None)
+
     def get_fields(self):
         fields = super().get_fields()
         request = self.context.get("request")
@@ -15,7 +18,16 @@ class EmployeeSerializer(serializers.ModelSerializer):
             return {
                 key: field
                 for key, field in fields.items()
-                if key in {"id", "employee_code", "full_name"}
+                if key
+                in {
+                    "id",
+                    "employee_code",
+                    "full_name",
+                    "branch",
+                    "branch_name",
+                    "division",
+                    "division_name",
+                }
             }
         return fields
 
@@ -40,6 +52,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
         errors = {}
         if start and expiry and expiry < start:
             errors["contract_expiry"] = "Kontrak berakhir sebelum tanggal masuk."
+        branch = attrs.get("branch", getattr(self.instance, "branch", None))
+        division = attrs.get("division", getattr(self.instance, "division", None))
+        if division and (branch is None or division.branch_id != branch.pk):
+            errors["division"] = "Pilih divisi yang dimiliki cabang ini, atau kosongkan divisi."
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
@@ -56,6 +72,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "id",
             "employee_code",
             "full_name",
+            "branch",
+            "branch_name",
+            "division",
+            "division_name",
             "date_of_birth",
             "job_title",
             "level",

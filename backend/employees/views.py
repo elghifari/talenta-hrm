@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from audit.models import AuditEvent
 from compensation.serializers import CompensationSerializer
 from django.db import IntegrityError, transaction
@@ -35,6 +37,7 @@ class EmployeeViewSet(
                 {"employee_code": ["employee with this employee code already exists."]}
             ) from error
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         try:
             return super().update(request, *args, **kwargs)
@@ -75,7 +78,13 @@ class EmployeeViewSet(
         )
 
     def get_queryset(self):
-        employees = Employee.objects.order_by("employee_code")
+        employees = Employee.objects.select_related("branch", "division").order_by("employee_code")
+        if (
+            self.action == "partial_update"
+            and isinstance(self.request.data, Mapping)
+            and {"branch", "division"}.intersection(self.request.data)
+        ):
+            employees = employees.select_for_update(of=("self",))
         if self.request.user.groups.filter(name="HR").exists():
             return employees
         today = timezone.localdate()
