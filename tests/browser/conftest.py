@@ -62,6 +62,15 @@ def login(live_server, synthetic_data):
     return perform
 
 
+@pytest.fixture
+def logout():
+    def perform(page):
+        page.get_by_role("button", name="Keluar", exact=True).click()
+        expect(page.get_by_label("Email", exact=True)).to_be_visible()
+
+    return perform
+
+
 @pytest.fixture(autouse=True)
 def isolated_browser_database(django_db_setup, django_db_blocker):
     import os

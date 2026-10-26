@@ -82,7 +82,7 @@ def assert_table_presentation(page, captures):
 
 
 def test_hr_manages_assigns_filters_and_manager_scope_stays_intact(
-    page, login, db_call, live_server, synthetic_data
+    page, login, logout, db_call, live_server, synthetic_data
 ):
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
@@ -155,7 +155,7 @@ def test_hr_manages_assigns_filters_and_manager_scope_stays_intact(
         if width in (390, 1440):
             page.screenshot(path=str(captures / f"grouped-table-{width}.png"), full_page=True)
     page.set_viewport_size({"width": 1440, "height": 1000})
-    page.get_by_role("button", name="Keluar", exact=True).click()
+    logout(page)
     login(page, role="manager")
     expect(page.get_by_role("link", name="Pegawai Contoh Own", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Pegawai Contoh Outside", exact=True)).to_have_count(0)

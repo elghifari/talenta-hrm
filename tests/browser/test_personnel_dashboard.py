@@ -11,7 +11,9 @@ from playwright.sync_api import expect
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
-def test_dashboard_dialog_and_populated_division_deletion(page, login, db_call, synthetic_data):
+def test_dashboard_dialog_and_populated_division_deletion(
+    page, login, logout, db_call, synthetic_data
+):
     def prepare():
         branch = Branch.objects.create(name="Synthetic Branch")
         division = Division.objects.create(name="Synthetic Division", branch=branch)
@@ -109,7 +111,7 @@ def test_dashboard_dialog_and_populated_division_deletion(page, login, db_call, 
         )
         == 1
     )
-    page.get_by_role("button", name="Keluar", exact=True).click()
+    logout(page)
     login(page, role="manager")
     modules.get_by_role("link", name="Personnel", exact=True).click()
     expect(page.locator(".personnel-metric")).to_have_count(1)

@@ -77,6 +77,26 @@ def test_expired_session_clears_draft_and_does_not_replay_write(
     expect(page.get_by_role("heading", name="Akses tidak tersedia", exact=True)).to_be_visible()
 
 
+def test_account_switch_waits_for_delayed_logout(page, login, logout, live_server, synthetic_data):
+    login(page)
+    page.evaluate(
+        """() => {
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = async (input, options) => {
+                if (input === '/api/auth/csrf/') {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                return originalFetch(input, options);
+            };
+        }"""
+    )
+    logout(page)
+    login(page, role="manager")
+    identity = page.context.request.get(live_server.url + "/api/auth/me/")
+    assert identity.status == 200
+    assert identity.json()["email"] == synthetic_data.users["manager"].email
+
+
 def test_invalid_credentials_then_logout_prevents_protected_reads(
     page, live_server, login, synthetic_data, db_call
 ):
