@@ -11,6 +11,15 @@
 .branch-dialog-row input { min-width: 0; }
 .branch-dialog-row button { flex-shrink: 0; }
 .branch-add-division { margin-top: 4px; }
+.branch-division { min-width: 0; border: 0; border-bottom: 1px solid #cbd4dd; padding: 0 0 12px; margin: 0 0 16px; }
+.branch-division .branch-dialog-row { margin-bottom: 2px; }
+.division-settings { display: flex; flex-wrap: wrap; gap: 4px 24px; }
+.division-settings label { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; cursor: pointer; }
+.division-settings input { appearance: none; display: grid; align-items: center; flex-shrink: 0; width: 40px; min-height: 24px; height: 24px; padding: 3px; border: 1px solid #77818c; border-radius: 12px; background: white; cursor: pointer; }
+.division-settings input::before { content: ''; width: 16px; height: 16px; border-radius: 50%; background: #526171; }
+.division-settings input:checked { background: #315a85; border-color: #315a85; }
+.division-settings input:checked::before { background: white; transform: translateX(16px); }
+@media (forced-colors: active) { .division-settings input { appearance: auto; } .division-settings input::before { content: none; } }
 .branch-dialog .danger { background: #b42318; border-color: #b42318; color: white; }
 .branch-dialog .danger:hover { background: #8e1b13; border-color: #8e1b13; }
 .branch-pending-deletions { margin-top: 24px; border-top: 1px solid #dbe1e6; padding-top: 12px; }

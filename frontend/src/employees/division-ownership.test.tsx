@@ -8,9 +8,9 @@ const branches = [
   { id: '10000000-0000-0000-0000-000000000002', name: 'Sekolah' },
 ];
 const divisions = [
-  { id: '20000000-0000-0000-0000-000000000001', name: 'Marketing', branch: branches[0].id, branch_name: branches[0].name },
-  { id: '20000000-0000-0000-0000-000000000002', name: 'Marketing', branch: branches[1].id, branch_name: branches[1].name },
-  { id: '20000000-0000-0000-0000-000000000003', name: 'Terapi', branch: branches[0].id, branch_name: branches[0].name },
+  { id: '20000000-0000-0000-0000-000000000001', name: 'Marketing', branch: branches[0].id, branch_name: branches[0].name, kinerja_enabled: false, pelimpahan_enabled: false },
+  { id: '20000000-0000-0000-0000-000000000002', name: 'Marketing', branch: branches[1].id, branch_name: branches[1].name, kinerja_enabled: false, pelimpahan_enabled: false },
+  { id: '20000000-0000-0000-0000-000000000003', name: 'Terapi', branch: branches[0].id, branch_name: branches[0].name, kinerja_enabled: false, pelimpahan_enabled: false },
 ];
 afterEach(() => vi.unstubAllGlobals());
 function setup() {

@@ -36,6 +36,8 @@ class Division(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=150)
     branch = models.ForeignKey(Branch, on_delete=models.PROTECT, related_name="divisions")
+    kinerja_enabled = models.BooleanField(default=False)
+    pelimpahan_enabled = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["branch__name", "name", "id"]
