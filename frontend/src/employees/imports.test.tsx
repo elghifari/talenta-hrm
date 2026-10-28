@@ -30,6 +30,7 @@ test('CSV stays in memory and is uploaded as multipart before an incoming-only s
   const user = userEvent.setup();
   render(<App initialEntries={['/employees/import']} />);
   const input = await screen.findByLabelText('File CSV');
+  expect(screen.getByRole('link', { name: 'Download template CSV' })).toHaveAttribute('download');
   expect(screen.getByRole('button', { name: 'Pratinjau CSV' })).toBeDisabled();
   await user.upload(input, new File(['Nama Lengkap,ID Karyawan\nKaryawan B,0002\n'], 'karyawan.csv', { type: 'text/csv' }));
   await user.click(screen.getByRole('button', { name: 'Pratinjau CSV' }));
@@ -48,12 +49,21 @@ test('CSV stays in memory and is uploaded as multipart before an incoming-only s
 const updated = { ...draft.rows[0], row: 3, employee_code: '0001', full_name: 'Karyawan A', status: 'update', current: { ...incoming, employee_code: '0001', full_name: 'Karyawan A', job_title: 'Terapis', level: 'Level 1' }, incoming: { ...incoming, employee_code: '0001', full_name: 'Karyawan A', job_title: 'Terapis Senior', level: 'Level 2' }, changes: ['job_title', 'level'] };
 const mixed = { ...draft, rows: [draft.rows[0], updated], summary: { new: 1, update: 1, unchanged: 0, error: 0 } };
 
+test('opening an already committed batch uses the same concise success copy', async () => {
+  const receipt = { ...mixed, state: 'committed', rows: [] };
+  vi.stubGlobal('fetch', vi.fn(async (path: string) => path.includes('/imports/') ? Response.json(receipt) : auth(path)));
+  render(<App initialEntries={['/employees/imports/' + draft.id]} />);
+  expect(await screen.findByText('Data pegawai berhasil diimpor.')).toBeInTheDocument();
+  expect(screen.queryByText(/tidak diperlukan|tidak perlu|upload ulang/i)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Konfirmasi upload' })).not.toBeInTheDocument();
+});
+
 test('review non-name changes in expandable rows before one explicit confirmation', async () => {
   const receipt = { ...mixed, state: 'committed', rows: [] };
   const fetcher = vi.fn(async (path: string) => path.endsWith('/confirm/') ? Response.json(receipt) : path.includes('/imports/') ? Response.json(mixed) : auth(path));
   vi.stubGlobal('fetch', fetcher); const user = userEvent.setup();
   render(<App initialEntries={['/employees/imports/' + draft.id]} />);
-  expect(await screen.findByText('ID Karyawan existing terdeteksi, apakah anda ingin meng-update informasi karyawan berikut?')).toBeInTheDocument();
+  expect(await screen.findByText('Beberapa ID Karyawan sudah terdaftar. Periksa perubahan berikut.')).toBeInTheDocument();
   expect(screen.getByText('0001 - Karyawan A')).toBeInTheDocument();
   const row = screen.getByText('Upd').parentElement!;
   const details = row.querySelector('details')!;
@@ -69,6 +79,8 @@ test('review non-name changes in expandable rows before one explicit confirmatio
   expect(row.querySelector('.import-marker')?.closest('details')).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Konfirmasi upload' }));
   expect(await screen.findByRole('heading', { name: 'Batch Upload tersimpan' })).toBeInTheDocument();
+  expect(screen.getByText('Data pegawai berhasil diimpor.')).toBeInTheDocument();
+  expect(screen.queryByText(/tidak diperlukan|tidak perlu|upload ulang/i)).not.toBeInTheDocument();
   expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/confirm/'))).toHaveLength(1);
 });
 
@@ -87,5 +99,7 @@ test('unknown confirmation outcome locks writes and reads the receipt without re
   expect(screen.queryByText(/Belum ada data pegawai yang disimpan/)).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Periksa hasil' }));
   expect(await screen.findByRole('heading', { name: 'Batch Upload tersimpan' })).toBeInTheDocument();
+  expect(screen.getByText('Data pegawai berhasil diimpor.')).toBeInTheDocument();
+  expect(screen.queryByText(/tidak diperlukan|tidak perlu|upload ulang/i)).not.toBeInTheDocument();
   expect(fetcher.mock.calls.filter(([path]) => path.endsWith('/confirm/'))).toHaveLength(1);
 });

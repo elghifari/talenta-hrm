@@ -35,9 +35,9 @@ export async function confirmBatch(request: typeof apiRequest, id: string, signa
 }
 export function importError(error: unknown) {
   if (error instanceof ApiError) {
-    if (error.status === 404 || error.status === 410) return 'Pratinjau tidak tersedia atau kedaluwarsa. Unggah CSV kembali.';
-    if (error.status === 409) return 'Data berubah sejak pratinjau. Unggah CSV kembali untuk memeriksa perubahan terbaru.';
-    if (error.status === 400 && error.body && typeof error.body === 'object') return Object.values(error.body).flat().filter(value => typeof value === 'string').join(' ') || 'CSV tidak valid. Periksa file lalu unggah kembali.';
+    if (error.status === 404 || error.status === 410) return 'Pratinjau tidak tersedia atau sudah kedaluwarsa. Upload ulang CSV.';
+    if (error.status === 409) return 'Data berubah sejak pratinjau. Upload ulang CSV untuk melihat perubahan terbaru.';
+    if (error.status === 400 && error.body && typeof error.body === 'object') return Object.values(error.body).flat().filter(value => typeof value === 'string').join(' ') || 'CSV tidak valid. Periksa file, lalu upload ulang.';
   }
   return errorText(error);
 }
