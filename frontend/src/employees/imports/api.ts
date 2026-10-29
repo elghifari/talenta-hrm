@@ -1,4 +1,5 @@
 import { ApiError, errorText, type apiRequest } from '../../api/client';
+import { validClassification } from '../classification';
 
 export type ImportStatus = 'new' | 'update' | 'unchanged' | 'error';
 export type ImportValues = Record<string, string | null>;
@@ -20,6 +21,8 @@ export function decodeBatch(value: unknown): ImportBatch {
   if (!batch || typeof batch.id !== 'string' || !['pending', 'committed'].includes(batch.state) || typeof batch.expires_at !== 'string' || !batch.summary || !statuses.every(status => Number.isInteger(batch.summary[status]) && batch.summary[status] >= 0) || !Array.isArray(batch.rows) || batch.rows.length > 500) throw new ApiError('protocol', 200, null, null);
   for (const row of batch.rows) {
     if (!row || !Number.isInteger(row.row) || typeof row.employee_code !== 'string' || typeof row.full_name !== 'string' || !statuses.includes(row.status) || (row.current !== null && !values(row.current)) || !values(row.incoming) || !Array.isArray(row.changes) || !row.changes.every(key => typeof key === 'string') || !row.errors || !Object.values(row.errors).every(error => Array.isArray(error) && error.every(text => typeof text === 'string'))) throw new ApiError('protocol', 200, null, null);
+    const invalidFields = row.status === 'error' ? Object.keys(row.errors).filter(key => row.errors[key].length > 0) : [];
+    if ((row.current && !validClassification(row.current)) || !validClassification(row.incoming, invalidFields)) throw new ApiError('protocol', 200, null, null);
   }
   if (batch.state === 'pending' && Object.values(batch.summary).reduce((sum, count) => sum + count, 0) !== batch.rows.length) throw new ApiError('protocol', 200, null, null);
   return batch;

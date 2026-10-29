@@ -20,6 +20,8 @@ COLUMNS = {
     "Level": "level",
     "Tanggal Masuk": "start_date",
     "Kontrak Berakhir": "contract_expiry",
+    "Status Kepegawaian": "employment_status",
+    "Tipe PKWT": "pkwt_type",
 }
 FIELDS = tuple(COLUMNS.values())
 MAX_BYTES = 1024 * 1024
@@ -160,6 +162,12 @@ def parse_rows(upload, request):
             for key, value in raw.items()
             if value or key in {"employee_code", "full_name"}
         }
+        for key in ("employment_status", "pkwt_type"):
+            if key in data:
+                labels = {
+                    label.casefold(): code for code, label in Employee._meta.get_field(key).choices
+                }
+                data[key] = labels.get(data[key].casefold(), data[key])
         names, hierarchy_errors = resolve_hierarchy(data, employee, branches, divisions)
         serializer = EmployeeSerializer(
             employee, data=data, partial=employee is not None, context={"request": request}

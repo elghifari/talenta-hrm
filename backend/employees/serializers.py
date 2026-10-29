@@ -56,6 +56,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
         division = attrs.get("division", getattr(self.instance, "division", None))
         if division and (branch is None or division.branch_id != branch.pk):
             errors["division"] = "Pilih divisi yang dimiliki cabang ini, atau kosongkan divisi."
+        status = attrs.get("employment_status", getattr(self.instance, "employment_status", ""))
+        if "employment_status" in attrs and status != "kontrak" and "pkwt_type" not in attrs:
+            attrs["pkwt_type"] = ""
+        kind = attrs.get("pkwt_type", getattr(self.instance, "pkwt_type", ""))
+        if status == "kontrak" and not kind:
+            errors["pkwt_type"] = "Pilih tipe PKWT untuk status Kontrak."
+        elif status != "kontrak" and kind:
+            errors["pkwt_type"] = "Tipe PKWT hanya berlaku untuk status Kontrak."
         if errors:
             raise serializers.ValidationError(errors)
         return attrs
@@ -64,6 +72,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         for name, value in validated_data.items():
             setattr(instance, name, value)
         instance.save(update_fields=list(validated_data))
+        instance.refresh_from_db()
         return instance
 
     class Meta:
@@ -81,5 +90,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "level",
             "start_date",
             "contract_expiry",
+            "employment_status",
+            "pkwt_type",
         ]
         read_only_fields = ["id"]

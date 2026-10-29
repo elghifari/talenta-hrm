@@ -124,7 +124,11 @@ def commit_batch(request, batch_id):
             writes = []
             for row in batch.rows:
                 current = records.get(row["employee_code"])
-                if snapshot(current) != row["current"]:
+                reviewed = row["current"]
+                if reviewed is not None:
+                    # Pre-classification previews reviewed these fields as unclassified.
+                    reviewed = {"employment_status": "", "pkwt_type": "", **reviewed}
+                if snapshot(current) != reviewed:
                     raise ImportConflict()
                 if row["status"] == "unchanged":
                     continue
