@@ -6,16 +6,17 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
+from organization.models import Branch, Division
 from rest_framework.exceptions import APIException, ValidationError
 
-from .imports import parse_rows, snapshot, summarize
+from .imports import FIELDS, parse_rows, snapshot, summarize
 from .models import Employee, EmployeeImportBatch
 from .serializers import EmployeeSerializer
 
 
 class PreviewExpired(APIException):
     status_code = 410
-    default_detail = "Pratinjau kedaluwarsa. Unggah CSV kembali."
+    default_detail = "Pratinjau sudah kedaluwarsa. Upload ulang CSV."
 
 
 def session_fingerprint(request):
@@ -68,8 +69,38 @@ def create_preview(request, upload):
 class ImportConflict(APIException):
     status_code = 409
     default_detail = (
-        "Data berubah sejak pratinjau. Unggah CSV kembali untuk memeriksa perubahan terbaru."
+        "Data berubah sejak pratinjau. Upload ulang CSV untuk melihat perubahan terbaru."
     )
+
+
+def lock_hierarchy(rows):
+    references = [values for row in rows for values in (row["current"], row["incoming"]) if values]
+    branch_ids = {values["branch"] for values in references if values.get("branch")}
+    division_ids = {values["division"] for values in references if values.get("division")}
+    branches = {
+        str(branch.pk): branch
+        for branch in Branch.objects.select_for_update(no_key=True)
+        .filter(pk__in=branch_ids)
+        .order_by("pk")
+    }
+    divisions = {
+        str(division.pk): division
+        for division in Division.objects.select_for_update(no_key=True)
+        .filter(pk__in=division_ids)
+        .order_by("pk")
+    }
+    for row in rows:
+        values = row["incoming"]
+        branch = branches.get(values.get("branch"))
+        division = divisions.get(values.get("division"))
+        if values.get("branch") and (branch is None or branch.name != values.get("branch_name")):
+            raise ImportConflict()
+        if values.get("division") and (
+            division is None
+            or division.name != values.get("division_name")
+            or str(division.branch_id) != values.get("branch")
+        ):
+            raise ImportConflict()
 
 
 def commit_batch(request, batch_id):
@@ -80,24 +111,30 @@ def commit_batch(request, batch_id):
                 return batch
             if any(row["status"] == "error" for row in batch.rows):
                 raise ValidationError(
-                    {"detail": "Perbaiki baris bermasalah lalu unggah CSV kembali."}
+                    {"detail": "Perbaiki baris bermasalah, lalu upload ulang CSV."}
                 )
+            lock_hierarchy(batch.rows)
             records = {
                 record.employee_code: record
-                for record in Employee.objects.select_for_update()
+                for record in Employee.objects.select_for_update(of=("self",))
+                .select_related("branch", "division")
                 .filter(employee_code__in=[row["employee_code"] for row in batch.rows])
                 .order_by("employee_code")
             }
             writes = []
             for row in batch.rows:
                 current = records.get(row["employee_code"])
-                if snapshot(current) != row["current"]:
+                reviewed = row["current"]
+                if reviewed is not None:
+                    # Pre-classification previews reviewed these fields as unclassified.
+                    reviewed = {"employment_status": "", "pkwt_type": "", **reviewed}
+                if snapshot(current) != reviewed:
                     raise ImportConflict()
                 if row["status"] == "unchanged":
                     continue
                 serializer = EmployeeSerializer(
                     current,
-                    data=row["incoming"],
+                    data={key: value for key, value in row["incoming"].items() if key in FIELDS},
                     partial=current is not None,
                     context={"request": request},
                 )

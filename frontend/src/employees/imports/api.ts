@@ -1,4 +1,5 @@
 import { ApiError, errorText, type apiRequest } from '../../api/client';
+import { validClassification } from '../classification';
 
 export type ImportStatus = 'new' | 'update' | 'unchanged' | 'error';
 export type ImportValues = Record<string, string | null>;
@@ -20,6 +21,8 @@ export function decodeBatch(value: unknown): ImportBatch {
   if (!batch || typeof batch.id !== 'string' || !['pending', 'committed'].includes(batch.state) || typeof batch.expires_at !== 'string' || !batch.summary || !statuses.every(status => Number.isInteger(batch.summary[status]) && batch.summary[status] >= 0) || !Array.isArray(batch.rows) || batch.rows.length > 500) throw new ApiError('protocol', 200, null, null);
   for (const row of batch.rows) {
     if (!row || !Number.isInteger(row.row) || typeof row.employee_code !== 'string' || typeof row.full_name !== 'string' || !statuses.includes(row.status) || (row.current !== null && !values(row.current)) || !values(row.incoming) || !Array.isArray(row.changes) || !row.changes.every(key => typeof key === 'string') || !row.errors || !Object.values(row.errors).every(error => Array.isArray(error) && error.every(text => typeof text === 'string'))) throw new ApiError('protocol', 200, null, null);
+    const invalidFields = row.status === 'error' ? Object.keys(row.errors).filter(key => row.errors[key].length > 0) : [];
+    if ((row.current && !validClassification(row.current)) || !validClassification(row.incoming, invalidFields)) throw new ApiError('protocol', 200, null, null);
   }
   if (batch.state === 'pending' && Object.values(batch.summary).reduce((sum, count) => sum + count, 0) !== batch.rows.length) throw new ApiError('protocol', 200, null, null);
   return batch;
@@ -35,9 +38,9 @@ export async function confirmBatch(request: typeof apiRequest, id: string, signa
 }
 export function importError(error: unknown) {
   if (error instanceof ApiError) {
-    if (error.status === 404 || error.status === 410) return 'Pratinjau tidak tersedia atau kedaluwarsa. Unggah CSV kembali.';
-    if (error.status === 409) return 'Data berubah sejak pratinjau. Unggah CSV kembali untuk memeriksa perubahan terbaru.';
-    if (error.status === 400 && error.body && typeof error.body === 'object') return Object.values(error.body).flat().filter(value => typeof value === 'string').join(' ') || 'CSV tidak valid. Periksa file lalu unggah kembali.';
+    if (error.status === 404 || error.status === 410) return 'Pratinjau tidak tersedia atau sudah kedaluwarsa. Upload ulang CSV.';
+    if (error.status === 409) return 'Data berubah sejak pratinjau. Upload ulang CSV untuk melihat perubahan terbaru.';
+    if (error.status === 400 && error.body && typeof error.body === 'object') return Object.values(error.body).flat().filter(value => typeof value === 'string').join(' ') || 'CSV tidak valid. Periksa file, lalu upload ulang.';
   }
   return errorText(error);
 }

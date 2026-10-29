@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from .models import Branch, Division
 from .serializers import BranchSerializer, DivisionSerializer
 
+DIVISION_SETTINGS = ("kinerja_enabled", "pelimpahan_enabled")
+
 
 class ReferenceViewSet(
     mixins.CreateModelMixin,
@@ -74,6 +76,11 @@ class BranchViewSet(ReferenceViewSet):
         expected = {"name": branch.name, "divisions": {str(item.pk): item.name for item in current}}
         if not isinstance(data, dict) or set(data) != {"name", "divisions", "expected", "deleted"}:
             raise ValidationError({"name": ["Data cabang tidak valid."]})
+        if isinstance(data["expected"], dict) and "settings" in data["expected"]:
+            expected["settings"] = {
+                str(item.pk): {key: getattr(item, key) for key in DIVISION_SETTINGS}
+                for item in current
+            }
         if data["expected"] != expected:
             return Response(
                 {"name": ["Data telah berubah. Tutup editor dan buka kembali."]}, status=409
@@ -109,7 +116,7 @@ class BranchViewSet(ReferenceViewSet):
             removals[identifier] = affected
         seen, names, changes = set(), set(), []
         for row in rows:
-            if not isinstance(row, dict) or set(row) - {"id", "name"}:
+            if not isinstance(row, dict) or set(row) - {"id", "name", *DIVISION_SETTINGS}:
                 raise ValidationError({"name": ["Data divisi tidak valid."]})
             identifier = row.get("id")
             if identifier is not None and (
@@ -125,7 +132,12 @@ class BranchViewSet(ReferenceViewSet):
             names.add(value.lower())
             if identifier:
                 seen.add(identifier)
-            changes.append((known.get(identifier), value))
+            settings = {key: row[key] for key in DIVISION_SETTINGS if key in row}
+            if any(type(value) is not bool for value in settings.values()):
+                raise ValidationError({"name": ["Pengaturan divisi harus berupa boolean."]})
+            if settings and "settings" not in expected:
+                raise ValidationError({"name": ["Muat ulang pengaturan divisi sebelum menyimpan."]})
+            changes.append((known.get(identifier), value, settings))
         if seen | set(removals) != set(known):
             raise ValidationError({"name": ["Penghapusan divisi harus dikonfirmasi."]})
         for identifier, affected in removals.items():
@@ -145,10 +157,10 @@ class BranchViewSet(ReferenceViewSet):
             AuditEvent.objects.create(
                 actor=request.user, action="branch.updated", target_id=branch.pk
             )
-        renamed = [(item, value) for item, value in changes if item and item.name != value]
+        renamed = [(item, value) for item, value, _ in changes if item and item.name != value]
         for item, value in renamed:
             Division.objects.filter(pk=item.pk).update(name=str(uuid4()))
-        for item, value in changes:
+        for item, value, settings in changes:
             if item is None:
                 item = Division.objects.create(branch=branch, name=value)
                 AuditEvent.objects.create(
@@ -159,6 +171,21 @@ class BranchViewSet(ReferenceViewSet):
                 item.save(update_fields=["name"])
                 AuditEvent.objects.create(
                     actor=request.user, action="division.updated", target_id=item.pk
+                )
+            changed_settings = {
+                key: {"old": getattr(item, key), "new": enabled}
+                for key, enabled in settings.items()
+                if getattr(item, key) != enabled
+            }
+            if changed_settings:
+                for key, change in changed_settings.items():
+                    setattr(item, key, change["new"])
+                item.save(update_fields=list(changed_settings))
+                AuditEvent.objects.create(
+                    actor=request.user,
+                    action="division.settings_changed",
+                    target_id=item.pk,
+                    changes=changed_settings,
                 )
         return Response(
             {

@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, isAbort } from '../api/client';
 import { useSession } from '../auth/SessionProvider';
-import { choiceError, decodeChoice, decodeDivisionChoices, type GroupChoice } from './group-api';
+import { choiceError, decodeChoice, decodeDivisionChoices, divisionSettings, type DivisionChoice, type DivisionSettings, type GroupChoice } from './group-api';
 import './branch-dialog.css';
 
-type Props = { branch: GroupChoice; divisions: GroupChoice[]; reportDirty(value: boolean): void; saved(): void; cancel(): void; refresh(): void };
+type Props = { branch: GroupChoice; divisions: DivisionChoice[]; reportDirty(value: boolean): void; saved(): void; cancel(): void; refresh(): void };
 export function BranchDialog({ branch, divisions, reportDirty, saved, cancel, refresh }: Props) {
   const { request } = useSession();
   const dialog = useRef<HTMLDialogElement>(null);
   const controller = useRef(new AbortController());
   const [name, setName] = useState(branch.name);
   const [originalDivisions] = useState(divisions);
-  const [deleted, setDeleted] = useState<{ id: string; employee_count: number; name: string }[]>([]);
+  const [deleted, setDeleted] = useState<({ id: string; employee_count: number; name: string } & DivisionSettings)[]>([]);
   const [deleting, setDeleting] = useState<{ key: string; name: string; count?: number; error?: string } | null>(null);
-  const [rows, setRows] = useState(() => divisions.map(item => ({ key: item.id, id: item.id as string | undefined, name: item.name })));
+  const [rows, setRows] = useState(() => divisions.map(item => ({ key: item.id, id: item.id as string | undefined, name: item.name, ...divisionSettings(item) })));
   const [busy, setBusy] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
-  const dirty = name !== branch.name || deleted.length > 0 || rows.length !== originalDivisions.length || rows.some(row => !row.id || row.name !== originalDivisions.find(item => item.id === row.id)?.name) || busy || uncertain;
+  const dirty = name !== branch.name || deleted.length > 0 || rows.length !== originalDivisions.length || rows.some(row => {
+    const original = originalDivisions.find(item => item.id === row.id);
+    return !original || row.name !== original.name || row.kinerja_enabled !== original.kinerja_enabled || row.pelimpahan_enabled !== original.pelimpahan_enabled;
+  }) || busy || uncertain;
   useEffect(() => { reportDirty(dirty); return () => reportDirty(false); }, [dirty, reportDirty]);
   useEffect(() => {
     const control = new AbortController(); controller.current = control;
@@ -40,7 +43,7 @@ export function BranchDialog({ branch, divisions, reportDirty, saved, cancel, re
     if (!deleting || deleting.count === undefined) return;
     const row = rows.find(item => item.key === deleting.key);
     if (!row?.id) return;
-    setDeleted(previous => [...previous, { id: row.id!, employee_count: deleting.count!, name: row.name }]);
+    setDeleted(previous => [...previous, { id: row.id!, employee_count: deleting.count!, name: row.name, ...divisionSettings(row) }]);
     setRows(previous => previous.filter(item => item.key !== row.key)); setDeleting(null);
     requestAnimationFrame(() => document.getElementById('branch-name')?.focus());
   }
@@ -55,7 +58,7 @@ export function BranchDialog({ branch, divisions, reportDirty, saved, cancel, re
     try {
       const response = await request<{ branch: unknown; divisions: unknown }>('/api/organization/branches/' + branch.id + '/structure/', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, signal: controller.current.signal,
-        body: JSON.stringify({ name, deleted: deleted.map(({ id, employee_count }) => ({ id, employee_count })), divisions: rows.map(row => ({ ...(row.id ? { id: row.id } : {}), name: row.name })), expected: { name: branch.name, divisions: Object.fromEntries(originalDivisions.map(row => [row.id, row.name])) } }),
+        body: JSON.stringify({ name, deleted: deleted.map(({ id, employee_count }) => ({ id, employee_count })), divisions: rows.map(row => ({ ...(row.id ? { id: row.id } : {}), name: row.name, ...divisionSettings(row) })), expected: { name: branch.name, divisions: Object.fromEntries(originalDivisions.map(row => [row.id, row.name])), settings: Object.fromEntries(originalDivisions.map(row => [row.id, divisionSettings(row)])) } }),
       });
       try { decodeChoice(response.branch); decodeDivisionChoices(response.divisions); } catch { throw new ApiError('protocol', 200, null, 'uncertain'); }
       if (!controller.current.signal.aborted) saved();
@@ -69,7 +72,7 @@ export function BranchDialog({ branch, divisions, reportDirty, saved, cancel, re
       const currentBranch = decodeChoice(await request('/api/organization/branches/' + branch.id + '/', { signal: controller.current.signal }));
       const currentDivisions = decodeDivisionChoices(await request('/api/organization/divisions/', { signal: controller.current.signal })).filter(item => item.branch === branch.id);
       const normalize = (value: string) => value.trim().replace(/\s+/g, ' ');
-      const matches = currentBranch.name === normalize(name) && currentDivisions.length === rows.length && deleted.every(row => !currentDivisions.some(item => item.id === row.id)) && rows.every(row => currentDivisions.some(item => (!row.id || row.id === item.id) && item.name === normalize(row.name)));
+      const matches = currentBranch.name === normalize(name) && currentDivisions.length === rows.length && deleted.every(row => !currentDivisions.some(item => item.id === row.id)) && rows.every(row => currentDivisions.some(item => (!row.id || row.id === item.id) && item.name === normalize(row.name) && item.kinerja_enabled === row.kinerja_enabled && item.pelimpahan_enabled === row.pelimpahan_enabled));
       if (matches) saved(); else { refresh(); setError('Data tersimpan belum cocok dengan perubahan ini. Tutup editor dan periksa daftar terbaru.'); }
     } catch (failure) { if (!isAbort(failure)) setError(choiceError(failure)); }
     finally { if (!controller.current.signal.aborted) setChecking(false); }
@@ -82,8 +85,21 @@ export function BranchDialog({ branch, divisions, reportDirty, saved, cancel, re
         {error && <p role="alert" className="error">{error}</p>}
         {uncertain && <div className="notice"><p>Hasil penyimpanan belum pasti. Periksa sebelum mencoba lagi.</p><button type="button" disabled={checking} onClick={checkSaved}>{checking ? 'Memeriksa…' : 'Periksa data tersimpan'}</button></div>}
         <div className="form-field"><label htmlFor="branch-name">Nama cabang</label><input autoFocus id="branch-name" value={name} maxLength={150} required disabled={busy || uncertain} onChange={event => setName(event.target.value)} /></div>
-        <fieldset disabled={busy || uncertain} className="branch-dialog-divisions"><legend>Divisi</legend>{rows.map((row, index) => <div className="branch-dialog-row" key={row.key}><label className="sr-only" htmlFor={'division-' + row.key}>Nama divisi {index + 1}</label><input id={'division-' + row.key} value={row.name} required maxLength={150} onChange={event => setRows(previous => previous.map(item => item.key === row.key ? { ...item, name: event.target.value } : item))} /><button type="button" aria-label={'Hapus divisi ' + (row.name || (index + 1))} onClick={() => askDelete(row)}>Hapus</button></div>)}<button type="button" className="branch-add-division" onClick={() => { const key = crypto.randomUUID(); setRows(previous => [...previous, { key, id: undefined, name: '' }]); requestAnimationFrame(() => document.getElementById('division-' + key)?.focus()); }}>Tambah divisi</button></fieldset>
-        {deleted.length > 0 && <section className="branch-pending-deletions" aria-label="Divisi yang akan dihapus"><h3>Akan dihapus</h3>{deleted.map(item => <div key={item.id}><span>{item.name}</span><button type="button" disabled={busy || uncertain} onClick={() => { setDeleted(previous => previous.filter(entry => entry.id !== item.id)); const original = originalDivisions.find(entry => entry.id === item.id)!; setRows(previous => [...previous, { key: item.id, id: item.id, name: original.name }]); }}>Batalkan</button></div>)}</section>}
+        <fieldset disabled={busy || uncertain} className="branch-dialog-divisions"><legend>Divisi</legend>
+          {rows.map((row, index) => <fieldset className="branch-division" key={row.key} aria-label={'Pengaturan divisi ' + (row.name || (index + 1))}>
+            <div className="branch-dialog-row">
+              <label className="sr-only" htmlFor={'division-' + row.key}>Nama divisi {index + 1}</label>
+              <input id={'division-' + row.key} value={row.name} required maxLength={150} onChange={event => setRows(previous => previous.map(item => item.key === row.key ? { ...item, name: event.target.value } : item))} />
+              <button type="button" aria-label={'Hapus divisi ' + (row.name || (index + 1))} onClick={() => askDelete(row)}>Hapus</button>
+            </div>
+            <div className="division-settings">
+              <label><input type="checkbox" role="switch" checked={row.kinerja_enabled} onChange={event => setRows(previous => previous.map(item => item.key === row.key ? { ...item, kinerja_enabled: event.target.checked } : item))} />Kinerja</label>
+              <label><input type="checkbox" role="switch" checked={row.pelimpahan_enabled} onChange={event => setRows(previous => previous.map(item => item.key === row.key ? { ...item, pelimpahan_enabled: event.target.checked } : item))} />Pelimpahan</label>
+            </div>
+          </fieldset>)}
+          <button type="button" className="branch-add-division" onClick={() => { const key = crypto.randomUUID(); setRows(previous => [...previous, { key, id: undefined, name: '', kinerja_enabled: false, pelimpahan_enabled: false }]); requestAnimationFrame(() => document.getElementById('division-' + key)?.focus()); }}>Tambah divisi</button>
+        </fieldset>
+        {deleted.length > 0 && <section className="branch-pending-deletions" aria-label="Divisi yang akan dihapus"><h3>Akan dihapus</h3>{deleted.map(item => <div key={item.id}><span>{item.name}</span><button type="button" disabled={busy || uncertain} onClick={() => { setDeleted(previous => previous.filter(entry => entry.id !== item.id)); setRows(previous => [...previous, { key: item.id, id: item.id, name: item.name, ...divisionSettings(item) }]); }}>Batalkan</button></div>)}</section>}
       </div>
       <footer className="branch-dialog-footer"><button type="button" onClick={close} disabled={busy || checking}>{uncertain ? 'Tutup' : 'Batal'}</button><button type="submit" className="primary" disabled={!dirty || busy || uncertain}>{busy ? 'Menyimpan…' : 'Simpan perubahan'}</button></footer>
       </>}

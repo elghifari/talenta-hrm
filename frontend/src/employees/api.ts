@@ -8,6 +8,8 @@ export function changedFields(original: EmployeeInput, current: EmployeeInput): 
   if ('division' in current && (original.division ?? null) !== (current.division ?? null)) changes.division = current.division ?? null;
   for (const field of ['date_of_birth', 'start_date', 'contract_expiry'] as const) if (field in current && (original[field] ?? null) !== (current[field] ?? null)) changes[field] = current[field] ?? null;
   for (const field of ['job_title', 'level'] as const) if (field in current && (original[field] ?? '') !== (current[field] ?? '')) changes[field] = current[field] ?? '';
+  if ('employment_status' in current && (original.employment_status ?? '') !== (current.employment_status ?? '')) changes.employment_status = current.employment_status ?? '';
+  if ('pkwt_type' in current && (original.pkwt_type ?? '') !== (current.pkwt_type ?? '')) changes.pkwt_type = current.pkwt_type ?? '';
   return changes;
 }
 export async function saveEmployee(request: typeof apiRequest, input: Partial<EmployeeInput>, id?: string, signal?: AbortSignal) {

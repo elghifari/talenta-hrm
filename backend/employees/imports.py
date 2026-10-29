@@ -2,6 +2,9 @@ import csv
 import io
 from collections import Counter
 
+from django.db.models import Value
+from django.db.models.functions import Lower
+from organization.models import Branch, Division
 from rest_framework.exceptions import ValidationError
 
 from .models import Employee
@@ -10,15 +13,25 @@ from .serializers import EmployeeSerializer
 COLUMNS = {
     "ID Karyawan": "employee_code",
     "Nama Lengkap": "full_name",
+    "Cabang": "branch",
+    "Divisi": "division",
     "Tanggal Lahir": "date_of_birth",
     "Jabatan": "job_title",
     "Level": "level",
     "Tanggal Masuk": "start_date",
     "Kontrak Berakhir": "contract_expiry",
+    "Status Kepegawaian": "employment_status",
+    "Tipe PKWT": "pkwt_type",
 }
 FIELDS = tuple(COLUMNS.values())
 MAX_BYTES = 1024 * 1024
 MAX_ROWS = 500
+
+
+def json_value(value):
+    if hasattr(value, "pk"):
+        return str(value.pk)
+    return value.isoformat() if hasattr(value, "isoformat") else value
 
 
 def snapshot(employee):
@@ -26,12 +39,53 @@ def snapshot(employee):
         return None
     return {
         "id": str(employee.pk),
-        **{
-            key: value.isoformat() if hasattr(value, "isoformat") else value
-            for key in FIELDS
-            for value in [getattr(employee, key)]
-        },
+        **{key: json_value(getattr(employee, key)) for key in FIELDS},
+        "branch_name": employee.branch.name if employee.branch else None,
+        "division_name": employee.division.name if employee.division else None,
     }
+
+
+def resolve_hierarchy(data, employee, branches, divisions):
+    branch = employee.branch if employee else None
+    names = {
+        "branch_name": branch.name if branch else None,
+        "division_name": employee.division.name if employee and employee.division else None,
+    }
+    errors = {}
+    if "branch" in data:
+        name = data.pop("branch")
+        if name not in branches:
+            branches[name] = (
+                Branch.objects.annotate(import_name=Lower("name"))
+                .filter(import_name=Lower(Value(name)))
+                .first()
+            )
+        branch = branches[name]
+        names["branch_name"] = branch.name if branch else name
+        if branch:
+            data["branch"] = str(branch.pk)
+        else:
+            errors["branch"] = ["Cabang belum terdaftar. Periksa nama cabang."]
+    if "division" in data:
+        name = data.pop("division")
+        names["division_name"] = name
+        if branch is None:
+            errors["division"] = ["Isi Cabang yang terdaftar untuk memilih Divisi."]
+        else:
+            key = (branch.pk, name)
+            if key not in divisions:
+                divisions[key] = (
+                    Division.objects.annotate(import_name=Lower("name"))
+                    .filter(branch=branch, import_name=Lower(Value(name)))
+                    .first()
+                )
+            division = divisions[key]
+            if division:
+                data["division"] = str(division.pk)
+                names["division_name"] = division.name
+            else:
+                errors["division"] = ["Divisi belum terdaftar di cabang ini. Periksa nama divisi."]
+    return names, errors
 
 
 def normalize_header(value):
@@ -92,9 +146,13 @@ def parse_rows(upload, request):
         raise ValidationError({"file": ["CSV belum berisi baris karyawan."]})
     codes = Counter(data.get("employee_code", "") for _, data in inputs)
     records = {
-        record.employee_code: record for record in Employee.objects.filter(employee_code__in=codes)
+        record.employee_code: record
+        for record in Employee.objects.select_related("branch", "division").filter(
+            employee_code__in=codes
+        )
     }
     rows = []
+    branches, divisions = {}, {}
     for row_number, raw in inputs:
         code = raw.get("employee_code", "")
         employee = records.get(code)
@@ -104,6 +162,13 @@ def parse_rows(upload, request):
             for key, value in raw.items()
             if value or key in {"employee_code", "full_name"}
         }
+        for key in ("employment_status", "pkwt_type"):
+            if key in data:
+                labels = {
+                    label.casefold(): code for code, label in Employee._meta.get_field(key).choices
+                }
+                data[key] = labels.get(data[key].casefold(), data[key])
+        names, hierarchy_errors = resolve_hierarchy(data, employee, branches, divisions)
         serializer = EmployeeSerializer(
             employee, data=data, partial=employee is not None, context={"request": request}
         )
@@ -111,21 +176,21 @@ def parse_rows(upload, request):
         errors = {
             key: [str(value) for value in values] for key, values in serializer.errors.items()
         }
+        errors.update(hierarchy_errors)
         if codes[code] > 1:
             errors["employee_code"] = ["ID Karyawan berulang dalam CSV."]
         defaults = {
-            key: None if key in {"date_of_birth", "start_date", "contract_expiry"} else ""
+            key: None
+            if key in {"branch", "division", "date_of_birth", "start_date", "contract_expiry"}
+            else ""
             for key in FIELDS
         }
         normalized = (
             data
             if errors
-            else {
-                key: value.isoformat() if hasattr(value, "isoformat") else value
-                for key, value in serializer.validated_data.items()
-            }
+            else {key: json_value(value) for key, value in serializer.validated_data.items()}
         )
-        incoming = {**(current or defaults), **normalized}
+        incoming = {**(current or defaults), **normalized, **names}
         incoming.pop("id", None)
         changes = [
             key

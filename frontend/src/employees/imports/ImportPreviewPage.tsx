@@ -41,25 +41,25 @@ function Preview({ batchId }: { batchId: string }) {
       const result = decodeBatch(await request('/api/employees/imports/' + encodeURIComponent(batchId) + '/', { signal: controller.current.signal }));
       if (controller.current.signal.aborted) return;
       if (result.state === 'committed') { setReceipt(result); setUncertain(false); setError(''); }
-      else setError('Server belum mengonfirmasi hasil. Periksa lagi tanpa mengirim ulang.');
+      else setError('Hasil impor belum bisa dikonfirmasi. Coba periksa lagi.');
     } catch (failure) {
-      if (!controller.current.signal.aborted && !isAbort(failure)) setError('Hasil belum dapat dipastikan. Periksa data pegawai; jangan mengirim ulang batch.');
+      if (!controller.current.signal.aborted && !isAbort(failure)) setError('Hasil impor belum bisa dikonfirmasi. Periksa data pegawai.');
     } finally { if (!controller.current.signal.aborted) setBusy(false); }
   }
   const committed = batch?.state === 'committed';
   return <><Link className="back" to={committed ? '/employees' : '/employees/import'}>{committed ? 'Kembali ke data pegawai' : 'Pilih CSV lain'}</Link>
-    <div className="page-heading"><div><PageTitle key={String(committed)}>{committed ? 'Batch Upload tersimpan' : 'Pratinjau Batch Upload'}</PageTitle>{batch && <p>{committed ? 'Data pegawai telah disimpan. Unggah ulang tidak diperlukan.' : uncertain ? 'Hasil penyimpanan belum pasti. Periksa hasil sebelum mengunggah ulang.' : 'Hanya karyawan dari CSV ini yang ditampilkan. Belum ada data pegawai yang disimpan.'}</p>}</div></div>
+    <div className="page-heading"><div><PageTitle key={String(committed)}>{committed ? 'Batch Upload tersimpan' : 'Pratinjau Batch Upload'}</PageTitle>{batch && <p>{committed ? 'Data pegawai berhasil diimpor.' : uncertain ? 'Periksa hasil impor.' : 'Periksa data dari CSV sebelum menyimpan.'}</p>}</div></div>
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Permintaan masih berjalan"><p>Permintaan masih berjalan. Tinggalkan halaman?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap di pratinjau</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     {resource.loading && !receipt && <p role="status">Memuat pratinjau CSV…</p>}
     {Boolean(resource.error) && !receipt && <div role="alert"><p className="error">{importError(resource.error)}</p><button onClick={resource.retry}>Coba lagi</button></div>}
     {batch && <>
       <p className={committed ? 'success' : 'import-totals'} role={committed ? 'status' : undefined}>{batch.summary.new} baru, {batch.summary.update} diperbarui, {batch.summary.unchanged} tidak berubah, {batch.summary.error} bermasalah.</p>
       {!committed && <>
-        {batch.rows.some(row => row.current) && <section className="notice"><p>ID Karyawan existing terdeteksi, apakah anda ingin meng-update informasi karyawan berikut?</p><ul>{batch.rows.filter(row => row.current).map(row => <li key={row.row}>{row.employee_code} - {row.current!.full_name}</li>)}</ul><p>Hanya kolom yang berubah pada baris Upd yang diperbarui.</p></section>}
+        {batch.rows.some(row => row.current) && <section className="notice"><p>Beberapa ID Karyawan sudah terdaftar. Periksa perubahan berikut.</p><ul>{batch.rows.filter(row => row.current).map(row => <li key={row.row}>{row.employee_code} - {row.current!.full_name}</li>)}</ul><p>Hanya kolom yang berubah pada baris Upd yang diperbarui.</p></section>}
         <p className="hint">New: baru. Upd: diperbarui. -: tidak berubah. !: perlu diperbaiki. Buka baris untuk membandingkan kolom.</p>
         <div className="import-head" aria-hidden="true"><span>ID Karyawan</span><span>Nama lengkap</span><span>Ringkasan perubahan</span></div>
         <ul className="import-rows" aria-label="Baris CSV">{batch.rows.map(row => <ImportComparison key={row.row} row={row} />)}</ul>
-        {batch.summary.error > 0 && <p className="error" role="alert">Perbaiki baris bermasalah lalu unggah CSV kembali. Seluruh batch belum dapat disimpan.</p>}
+        {batch.summary.error > 0 && <p className="error" role="alert">Perbaiki baris bermasalah, lalu upload ulang CSV.</p>}
         {error && <p className="error" role="alert">{error}</p>}
         {uncertain && <button disabled={busy} onClick={readReceipt}>Periksa hasil</button>}
         <div className="form-actions"><button className="primary" disabled={busy || uncertain || blocked || batch.summary.error > 0} onClick={confirm}>{busy ? 'Menyimpan batch…' : 'Konfirmasi upload'}</button><button disabled={busy} onClick={() => { allowLeave.current = !uncertain; navigate('/employees'); }}>Batal</button></div>

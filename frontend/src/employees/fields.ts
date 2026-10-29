@@ -1,3 +1,4 @@
+import { classificationFields } from './classification';
 export const employeeFields = [
   { key: 'employee_code', label: 'ID Karyawan', type: 'text', maxLength: 64, required: true },
   { key: 'full_name', label: 'Nama lengkap', type: 'text', maxLength: 200, required: true },
@@ -8,5 +9,9 @@ export const employeeFields = [
   { key: 'contract_expiry', label: 'Kontrak berakhir', type: 'date' },
 ] as const;
 export type EmployeeField = typeof employeeFields[number]['key'];
-export function fieldLabel(key: string) { return employeeFields.find(field => field.key === key)?.label ?? 'Data karyawan'; }
-export function fieldValue(value: string | null | undefined) { return value || 'Belum diisi'; }
+export function fieldLabel(key: string) { return [...employeeFields, ...classificationFields].find(field => field.key === key)?.label ?? 'Data karyawan'; }
+export function fieldValue(value: string | null | undefined, key?: string) {
+  const classification = classificationFields.find(field => field.key === key);
+  if (classification) return classification.options.find(option => option.value === value)?.label ?? (value || 'Belum diisi');
+  return value || 'Belum diisi';
+}

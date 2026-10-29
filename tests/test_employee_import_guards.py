@@ -187,7 +187,8 @@ def test_hr_template_download_has_indonesian_headers(hr):
     assert response["Content-Type"].startswith("text/csv")
     assert (
         response.content.decode("utf-8-sig").splitlines()[0]
-        == "ID Karyawan,Nama Lengkap,Tanggal Lahir,Jabatan,Level,Tanggal Masuk,Kontrak Berakhir"
+        == "ID Karyawan,Nama Lengkap,Cabang,Divisi,Tanggal Lahir,"
+        "Jabatan,Level,Tanggal Masuk,Kontrak Berakhir,Status Kepegawaian,Tipe PKWT"
     )
 
 

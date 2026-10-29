@@ -51,6 +51,15 @@ class BranchSerializer(ReferenceSerializer):
 class DivisionSerializer(ReferenceSerializer):
     branch_name = serializers.CharField(source="branch.name", read_only=True)
 
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        if validated_data:
+            instance.save(update_fields=list(validated_data))
+        instance.refresh_from_db()
+        return instance
+
     class Meta(ReferenceSerializer.Meta):
         model = Division
-        fields = ["id", "name", "branch", "branch_name"]
+        fields = ["id", "name", "branch", "branch_name", "kinerja_enabled", "pelimpahan_enabled"]
+        read_only_fields = ["id", "kinerja_enabled", "pelimpahan_enabled"]

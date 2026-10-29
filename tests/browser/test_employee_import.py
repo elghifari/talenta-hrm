@@ -18,6 +18,9 @@ CSV = (
 def open_preview(page, login):
     login(page)
     page.get_by_role("link", name="Batch Upload", exact=True).click()
+    expect(page.get_by_role("link", name="Download template CSV", exact=True)).to_have_attribute(
+        "download", ""
+    )
     page.get_by_label("File CSV", exact=True).set_input_files(
         {"name": "karyawan.csv", "mimeType": "text/csv", "buffer": CSV.encode()}
     )
@@ -56,14 +59,30 @@ def test_mixed_csv_review_persistence_and_responsive_layout(page, login, db_call
             page.screenshot(path=str(captures / f"preview-{width}.png"), full_page=True)
     page.get_by_role("button", name="Konfirmasi upload", exact=True).click()
     expect(page.get_by_role("heading", name="Batch Upload tersimpan", exact=True)).to_be_visible()
+    expect(page.get_by_text("Data pegawai berhasil diimpor.", exact=True)).to_be_visible()
+    assert "tidak diperlukan" not in page.locator("body").inner_text()
     page.reload()
     expect(page.get_by_role("heading", name="Batch Upload tersimpan", exact=True)).to_be_visible()
+    expect(page.get_by_text("Data pegawai berhasil diimpor.", exact=True)).to_be_visible()
     assert db_call(lambda: Employee.objects.count()) == 7
     assert db_call(lambda: Employee.objects.get(employee_code="0001").job_title) == "Terapis Senior"
     assert (
         db_call(lambda: str(Employee.objects.get(employee_code="0007").date_of_birth))
         == "1998-03-21"
     )
+    assert db_call(lambda: AuditEvent.objects.count()) == 2
+
+    page.get_by_role("link", name="Kembali ke data pegawai", exact=True).click()
+    page.get_by_role("link", name="Batch Upload", exact=True).click()
+    page.get_by_label("File CSV", exact=True).set_input_files(
+        {"name": "karyawan.csv", "mimeType": "text/csv", "buffer": CSV.encode()}
+    )
+    page.get_by_role("button", name="Pratinjau CSV", exact=True).click()
+    expect(page.locator(".import-marker")).to_have_text(["-", "-", "-"])
+    page.get_by_role("button", name="Konfirmasi upload", exact=True).click()
+    expect(page.get_by_text("Data pegawai berhasil diimpor.", exact=True)).to_be_visible()
+    assert "tidak diperlukan" not in page.locator("body").inner_text()
+    assert db_call(lambda: Employee.objects.count()) == 7
     assert db_call(lambda: AuditEvent.objects.count()) == 2
 
 
@@ -83,6 +102,8 @@ def test_committed_response_loss_reads_receipt_without_mutation_replay(page, log
     expect(page.get_by_role("button", name="Periksa hasil", exact=True)).to_be_visible()
     page.get_by_role("button", name="Periksa hasil", exact=True).click()
     expect(page.get_by_role("heading", name="Batch Upload tersimpan", exact=True)).to_be_visible()
+    expect(page.get_by_text("Data pegawai berhasil diimpor.", exact=True)).to_be_visible()
+    assert "tidak diperlukan" not in page.locator("body").inner_text()
     assert len(posts) == 1
     assert db_call(lambda: Employee.objects.count()) == 7
     assert db_call(lambda: AuditEvent.objects.count()) == 2

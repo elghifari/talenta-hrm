@@ -4,7 +4,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { App } from '../app/App';
 
 const branch = { id: '10000000-0000-0000-0000-000000000001', name: 'Synthetic Branch' };
-const division = { id: '20000000-0000-0000-0000-000000000001', name: 'Synthetic Division', branch: branch.id, branch_name: branch.name };
+const division = { id: '20000000-0000-0000-0000-000000000001', name: 'Synthetic Division', branch: branch.id, branch_name: branch.name, kinerja_enabled: false, pelimpahan_enabled: false };
 afterEach(() => vi.unstubAllGlobals());
 function identity(writable: boolean) { return { id: 1, email: 'test@example.test', capabilities: { employees_read: true, employees_write: writable } }; }
 function dateAfter(days: number) {

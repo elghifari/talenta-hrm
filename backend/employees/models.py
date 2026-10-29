@@ -21,6 +21,23 @@ class Employee(models.Model):
     level = models.CharField(max_length=100, blank=True, default="")
     start_date = models.DateField(null=True, blank=True)
     contract_expiry = models.DateField(null=True, blank=True)
+    employment_status = models.CharField(
+        max_length=16,
+        blank=True,
+        default="",
+        choices=[
+            ("kontrak", "Kontrak"),
+            ("freelance", "Freelance"),
+            ("magang", "Magang"),
+            ("permanen", "Permanen"),
+        ],
+    )
+    pkwt_type = models.CharField(
+        max_length=16,
+        blank=True,
+        default="",
+        choices=[("klinik_umum", "Klinik Umum"), ("guru", "Guru"), ("yayasan", "Yayasan")],
+    )
 
     class Meta:
         constraints = [
@@ -29,7 +46,22 @@ class Employee(models.Model):
                 | models.Q(contract_expiry__isnull=True)
                 | models.Q(contract_expiry__gte=models.F("start_date")),
                 name="valid_employee_contract_dates",
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    employment_status__in=["", "kontrak", "freelance", "magang", "permanen"]
+                ),
+                name="valid_employee_employment_status",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(pkwt_type__in=["", "klinik_umum", "guru", "yayasan"]),
+                name="valid_employee_pkwt_type",
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(employment_status="kontrak") & ~models.Q(pkwt_type=""))
+                | (~models.Q(employment_status="kontrak") & models.Q(pkwt_type="")),
+                name="valid_employee_employment_pair",
+            ),
         ]
 
 
