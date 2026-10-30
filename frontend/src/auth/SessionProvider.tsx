@@ -1,18 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError, apiRequest, getCsrf } from '../api/client';
-export type Identity = { id: number; email: string; capabilities: { employees_read: boolean; employees_write: boolean } };
+export type Identity = { id: number; email: string; capabilities: { employees_read: boolean; employees_write: boolean; audit_read: boolean } };
 function decodeIdentity(value: unknown): Identity {
   const x = value as Identity | null;
   if (!x || typeof x.id !== 'number' || typeof x.email !== 'string' ||
-      typeof x.capabilities?.employees_read !== 'boolean' || typeof x.capabilities?.employees_write !== 'boolean') {
+      typeof x.capabilities?.employees_read !== 'boolean' || typeof x.capabilities?.employees_write !== 'boolean' ||
+      (x.capabilities.audit_read !== undefined && typeof x.capabilities.audit_read !== 'boolean')) {
     throw new ApiError('protocol', 200, null, null);
   }
-  return x;
+  return { ...x, capabilities: { ...x.capabilities, audit_read: x.capabilities.audit_read ?? false } };
 }
 function changedIdentity(previous: Identity, next: Identity) {
   return previous.id !== next.id || previous.email !== next.email ||
     previous.capabilities.employees_read !== next.capabilities.employees_read ||
-    previous.capabilities.employees_write !== next.capabilities.employees_write;
+    previous.capabilities.employees_write !== next.capabilities.employees_write ||
+    previous.capabilities.audit_read !== next.capabilities.audit_read;
 }
 type Status = 'checking' | 'authenticated' | 'anonymous' | 'error';
 type Session = {

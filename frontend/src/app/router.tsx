@@ -9,6 +9,7 @@ import { ImportUploadPage } from '../employees/imports/ImportUploadPage';
 import { ImportPreviewPage } from '../employees/imports/ImportPreviewPage';
 import { GroupManagementPage } from '../employees/OrganizationPage';
 import { AppShell } from './AppShell';
+import { ActivityLogPage } from '../audit/ActivityLogPage';
 import { PersonnelPage } from '../employees/PersonnelPage';
 function Gate() {
   const session = useSession();
@@ -22,6 +23,7 @@ export function makeRouter(initialEntries?: string[]) {
     { path: '/', element: <Navigate replace to="/personnel" /> },
     { path: '/login', element: <Navigate replace to="/personnel" /> },
     { path: '/personnel', element: <PersonnelPage />, handle: { breadcrumb: false } },
+    { path: '/personnel/activity', element: <ActivityLogPage /> },
     { path: '/employees', element: <EmployeeListPage /> },
     { path: '/employees/new', element: <EmployeeCreatePage /> },
     { path: '/employees/import', element: <ImportUploadPage /> },

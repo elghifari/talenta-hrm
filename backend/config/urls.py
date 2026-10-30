@@ -7,6 +7,7 @@ from .views import health
 urlpatterns = [
     path("api/health/", health),
     path("api/", include("employees.urls")),
+    path("api/", include("audit.urls")),
     path("api/organization/", include("organization.urls")),
     path("api/auth/csrf/", csrf),
     path("api/auth/login/", SessionLoginView.as_view()),

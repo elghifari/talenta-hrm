@@ -27,7 +27,7 @@ function Management() {
   }
   function cancel() { setEdit(null); setDraftDirty(false); requestAnimationFrame(() => editorTrigger.current?.focus()); }
   const loading = branches.loading || divisions.loading; const failed = Boolean(branches.error || divisions.error);
-  return <><div className="page-heading"><div><PageTitle>Cabang dan Divisi</PageTitle><p>Setiap divisi dimiliki satu cabang. Buka cabang untuk melihat divisinya.</p></div></div>
+  return <><div className="page-heading"><div><PageTitle>Cabang dan Divisi</PageTitle></div></div>
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Perubahan kelompok belum disimpan" onKeyDown={event => { if (event.key === 'Escape') blocker.reset(); }}><p>Perubahan kelompok belum disimpan. Tinggalkan halaman?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap di halaman</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     <div className="form-actions organization-actions"><button ref={addBranch} className="primary" disabled={Boolean(edit) || loading || failed} onClick={event => { editorTrigger.current = event.currentTarget; setSaved(''); setEdit({ kind: 'branches' }); }}>Tambah cabang</button></div>
     {edit?.record && <BranchDialog branch={edit.record} divisions={(divisions.data ?? []).filter(item => item.branch === edit.record!.id)} reportDirty={setDraftDirty} saved={() => finish(edit.record!.id)} cancel={cancel} refresh={refresh} />}

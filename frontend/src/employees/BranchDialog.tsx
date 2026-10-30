@@ -88,6 +88,7 @@ export function BranchDialog({ branch, divisions, reportDirty, saved, cancel, re
         <fieldset disabled={busy || uncertain} className="branch-dialog-divisions"><legend>Divisi</legend>
           {rows.map((row, index) => <fieldset className="branch-division" key={row.key} aria-label={'Pengaturan divisi ' + (row.name || (index + 1))}>
             <div className="branch-dialog-row">
+              <span className="branch-division-number" aria-hidden="true">{index + 1}.</span>
               <label className="sr-only" htmlFor={'division-' + row.key}>Nama divisi {index + 1}</label>
               <input id={'division-' + row.key} value={row.name} required maxLength={150} onChange={event => setRows(previous => previous.map(item => item.key === row.key ? { ...item, name: event.target.value } : item))} />
               <button type="button" aria-label={'Hapus divisi ' + (row.name || (index + 1))} onClick={() => askDelete(row)}>Hapus</button>

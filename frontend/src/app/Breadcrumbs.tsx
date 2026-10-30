@@ -6,7 +6,8 @@ export function Breadcrumbs() {
   const matches = useMatches();
   if ((matches.at(-1)?.handle as { breadcrumb?: boolean } | undefined)?.breadcrumb === false) return null;
   const crumbs: Crumb[] = [{ label: 'Personnel', ...(pathname !== '/personnel' ? { to: '/personnel' } : {}) }];
-  if (pathname === '/employees/groups') crumbs.push({ label: 'Cabang & Divisi' });
+  if (pathname === '/personnel/activity') crumbs.push({ label: 'Log aktivitas' });
+  else if (pathname === '/employees/groups') crumbs.push({ label: 'Cabang & Divisi' });
   else if (pathname !== '/personnel') {
     crumbs.push({ label: 'Data pegawai', ...(pathname !== '/employees' ? { to: '/employees' } : {}) });
     if (pathname === '/employees/new') crumbs.push({ label: 'Tambah pegawai' });
