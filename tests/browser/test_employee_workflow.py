@@ -71,7 +71,7 @@ def test_dirty_navigation_and_phone_menu(page, login):
     page.get_by_role("button", name="Menu", exact=True).click()
     expect(
         page.get_by_role("navigation", name="Modul").get_by_role(
-            "link", name="Personnel", exact=True
+            "button", name="Personnel", exact=True
         )
     ).to_be_visible()
     page.keyboard.press("Escape")

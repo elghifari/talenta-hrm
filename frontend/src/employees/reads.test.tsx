@@ -10,7 +10,7 @@ test('selected sidebar exposes Personnel and code-first employees with real deta
     return Response.json(path === '/api/employees/' ? [employee] : employee);
   }));
   render(<App initialEntries={['/employees']} />); const user = userEvent.setup();
-  expect(within(await screen.findByRole('navigation', { name: 'Modul' })).getByRole('link', { name: 'Personnel' })).toHaveAttribute('href', '/personnel');
+  expect(within(await screen.findByRole('navigation', { name: 'Modul' })).getByRole('link', { name: 'Ringkasan' })).toHaveAttribute('href', '/personnel');
   expect(screen.queryByRole('link', { name: 'Payroll' })).not.toBeInTheDocument();
   await user.click(await screen.findByRole('link', { name: employee.full_name }));
   expect(await screen.findByRole('heading', { name: employee.full_name })).toBeInTheDocument();

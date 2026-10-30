@@ -28,7 +28,7 @@ def test_dashboard_dialog_and_populated_division_deletion(
     branch_id, division_id, employee_id = db_call(prepare)
     login(page)
     modules = page.get_by_role("navigation", name="Modul", exact=True)
-    modules.get_by_role("link", name="Personnel", exact=True).click()
+    modules.get_by_role("link", name="Ringkasan", exact=True).click()
     expect(page.get_by_role("heading", name="Personnel", exact=True)).to_be_visible()
     expect(page.get_by_role("navigation", name="Breadcrumb")).to_have_count(0)
     expect(
@@ -113,7 +113,7 @@ def test_dashboard_dialog_and_populated_division_deletion(
     )
     logout(page)
     login(page, role="manager")
-    modules.get_by_role("link", name="Personnel", exact=True).click()
+    modules.get_by_role("link", name="Ringkasan", exact=True).click()
     expect(page.locator(".personnel-metric")).to_have_count(1)
     expect(page.locator(".personnel-metric strong")).to_have_text("2")
     expect(page.get_by_role("table")).to_have_count(0)
