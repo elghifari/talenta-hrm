@@ -7,7 +7,7 @@ import { actions, auditPath, decodeAuditPage, emptyFilters, type AuditEvent, typ
 import './activity-log.css';
 
 const timeFormat = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-const targetNames = { employee: 'Pegawai', branch: 'Cabang', division: 'Divisi', unknown: 'Objek' };
+const targetNames = { employee: 'Pegawai', branch: 'Unit', division: 'Divisi', unknown: 'Objek' };
 function EventDetails({ event }: { event: AuditEvent }) {
   const entries = Object.entries(event.changes);
   return <><strong>{event.action_label}</strong>{entries.length ? entries.map(([key, diff]) => <span className="audit-detail" key={key}>{key === 'kinerja_enabled' ? 'Kinerja' : 'Pelimpahan'}: {diff.old ? 'Aktif' : 'Nonaktif'} → {diff.new ? 'Aktif' : 'Nonaktif'}</span>) : <span className="audit-detail">Rincian perubahan tidak tercatat.</span>}</>;

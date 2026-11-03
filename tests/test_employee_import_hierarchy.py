@@ -10,14 +10,13 @@ pytestmark = pytest.mark.django_db
 
 def test_import_resolves_division_within_named_branch_and_persists_ids(hr):
     client, user = hr
-    first = Branch.objects.create(name="Cabang Utama")
-    second = Branch.objects.create(name="Cabang Kedua")
+    first = Branch.objects.create(name="Unit Utama")
+    second = Branch.objects.create(name="Unit Kedua")
     division = Division.objects.create(branch=first, name="Pelayanan")
     Division.objects.create(branch=second, name="Pelayanan")
     response = upload(
         client,
-        "ID Karyawan,Nama Lengkap,Cabang,Divisi\n"
-        "0010,Karyawan Hierarki, cabang utama , PELAYANAN \n",
+        "ID Karyawan,Nama Lengkap,Unit,Divisi\n0010,Karyawan Hierarki, unit utama , PELAYANAN \n",
     )
     assert response.status_code == 201, response.content
     draft = response.json()
@@ -50,16 +49,16 @@ def test_import_resolves_division_within_named_branch_and_persists_ids(hr):
 )
 def test_confirmation_rejects_changed_hierarchy_without_partial_writes(hr, change):
     client, _ = hr
-    branch = Branch.objects.create(name="Cabang Utama")
+    branch = Branch.objects.create(name="Unit Utama")
     division = Division.objects.create(branch=branch, name="Pelayanan")
     draft = upload(
         client,
-        "ID Karyawan,Nama Lengkap,Cabang,Divisi\n"
-        "0010,Karyawan Tanpa Cabang,,\n0011,Karyawan Hierarki,Cabang Utama,Pelayanan\n",
+        "ID Karyawan,Nama Lengkap,Unit,Divisi\n"
+        "0010,Karyawan Tanpa Unit,,\n0011,Karyawan Hierarki,Unit Utama,Pelayanan\n",
     ).json()
     assert draft["summary"]["error"] == 0
     if change == "branch_name":
-        Branch.objects.filter(pk=branch.pk).update(name="Cabang Diubah")
+        Branch.objects.filter(pk=branch.pk).update(name="Unit Diubah")
     elif change == "division_name":
         Division.objects.filter(pk=division.pk).update(name="Divisi Diubah")
     elif change == "division_deleted":
@@ -68,7 +67,7 @@ def test_confirmation_rejects_changed_hierarchy_without_partial_writes(hr, chang
         division.delete()
         branch.delete()
     else:
-        other = Branch.objects.create(name="Cabang Lain")
+        other = Branch.objects.create(name="Unit Lain")
         Division.objects.filter(pk=division.pk).update(branch=other)
     result = client.post(
         f"/api/employees/imports/{draft['id']}/confirm/", {}, content_type="application/json"
@@ -83,22 +82,22 @@ def test_confirmation_rejects_changed_hierarchy_without_partial_writes(hr, chang
     ("branch_name", "division_name", "error_field"),
     [
         ("Tidak Ada", "", "branch"),
-        ("Cabang Utama", "Tidak Ada", "division"),
+        ("Unit Utama", "Tidak Ada", "division"),
         ("", "Pelayanan", "division"),
-        ("Cabang Lain", "Pelayanan", "division"),
+        ("Unit Lain", "Pelayanan", "division"),
     ],
 )
 def test_unknown_or_cross_branch_names_block_the_whole_batch(
     hr, branch_name, division_name, error_field
 ):
     client, _ = hr
-    branch = Branch.objects.create(name="Cabang Utama")
-    Branch.objects.create(name="Cabang Lain")
+    branch = Branch.objects.create(name="Unit Utama")
+    Branch.objects.create(name="Unit Lain")
     Division.objects.create(branch=branch, name="Pelayanan")
     draft = upload(
         client,
-        "ID Karyawan,Nama Lengkap,Cabang,Divisi\n"
-        "0010,Karyawan Valid,Cabang Utama,Pelayanan\n"
+        "ID Karyawan,Nama Lengkap,Unit,Divisi\n"
+        "0010,Karyawan Valid,Unit Utama,Pelayanan\n"
         f"0011,Karyawan Invalid,{branch_name},{division_name}\n",
     ).json()
     assert draft["rows"][1]["status"] == "error"
@@ -115,11 +114,11 @@ def test_unknown_or_cross_branch_names_block_the_whole_batch(
 
 @pytest.mark.parametrize(
     "headers,values",
-    [("", ""), (",Cabang,Divisi", ",,"), (",Cabang,Divisi", ",cabang utama,PELAYANAN")],
+    [("", ""), (",Unit,Divisi", ",,"), (",Unit,Divisi", ",unit utama,PELAYANAN")],
 )
 def test_missing_blank_or_equivalent_hierarchy_cells_preserve_assignments(hr, headers, values):
     client, _ = hr
-    branch = Branch.objects.create(name="Cabang Utama")
+    branch = Branch.objects.create(name="Unit Utama")
     division = Division.objects.create(branch=branch, name="Pelayanan")
     employee = Employee.objects.create(
         employee_code="0010", full_name="Karyawan Lama", branch=branch, division=division
@@ -143,15 +142,15 @@ def test_missing_blank_or_equivalent_hierarchy_cells_preserve_assignments(hr, he
 
 def test_import_updates_hierarchy_only_with_reviewed_valid_pair(hr):
     client, _ = hr
-    first = Branch.objects.create(name="Cabang Lama")
-    second = Branch.objects.create(name="Cabang Baru")
+    first = Branch.objects.create(name="Unit Lama")
+    second = Branch.objects.create(name="Unit Baru")
     old = Division.objects.create(branch=first, name="Pelayanan")
     new = Division.objects.create(branch=second, name="Pelayanan")
     employee = Employee.objects.create(
         employee_code="0010", full_name="Karyawan Lama", branch=first, division=old
     )
     draft = upload(
-        client, "ID Karyawan,Nama Lengkap,Cabang,Divisi\n0010,Karyawan Lama,Cabang Baru,Pelayanan\n"
+        client, "ID Karyawan,Nama Lengkap,Unit,Divisi\n0010,Karyawan Lama,Unit Baru,Pelayanan\n"
     ).json()
     row = draft["rows"][0]
     assert row["status"] == "update"
@@ -171,15 +170,15 @@ def test_import_updates_hierarchy_only_with_reviewed_valid_pair(hr):
 
 def test_division_only_uses_existing_branch_but_branch_change_cannot_silently_clear_division(hr):
     client, _ = hr
-    first = Branch.objects.create(name="Cabang Lama")
-    Branch.objects.create(name="Cabang Baru")
+    first = Branch.objects.create(name="Unit Lama")
+    Branch.objects.create(name="Unit Baru")
     old = Division.objects.create(branch=first, name="Pelayanan")
     new = Division.objects.create(branch=first, name="Administrasi")
     employee = Employee.objects.create(
         employee_code="0010", full_name="Karyawan Lama", branch=first, division=old
     )
     invalid = upload(
-        client, "ID Karyawan,Nama Lengkap,Cabang,Divisi\n0010,Karyawan Lama,Cabang Baru,\n"
+        client, "ID Karyawan,Nama Lengkap,Unit,Divisi\n0010,Karyawan Lama,Unit Baru,\n"
     ).json()
     assert invalid["rows"][0]["status"] == "error"
     draft = upload(

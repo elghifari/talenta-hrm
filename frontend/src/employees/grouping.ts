@@ -7,9 +7,9 @@ export type GroupNode = EmployeeGroup | Employee;
 export function groupOptions(employees: Employee[], kind: GroupKey) {
   const options = new Map<string, string>();
   const owners = new Map<string, string>();
-  for (const employee of employees) options.set(employee[kind] ?? '__unset__', employee[kind + '_name' as 'branch_name' | 'division_name'] || (kind === 'branch' ? 'Cabang belum ditentukan' : 'Divisi belum ditentukan'));
+  for (const employee of employees) options.set(employee[kind] ?? '__unset__', employee[kind + '_name' as 'branch_name' | 'division_name'] || (kind === 'branch' ? 'Unit belum ditentukan' : 'Divisi belum ditentukan'));
   if (kind === 'division') {
-    for (const employee of employees) if (employee.division) owners.set(employee.division, employee.branch_name || 'Cabang belum ditentukan');
+    for (const employee of employees) if (employee.division) owners.set(employee.division, employee.branch_name || 'Unit belum ditentukan');
     const counts = new Map<string, number>();
     for (const label of options.values()) { const key = label.toLocaleLowerCase('id'); counts.set(key, (counts.get(key) ?? 0) + 1); }
     for (const [id, label] of options) if (id !== '__unset__' && (counts.get(label.toLocaleLowerCase('id')) ?? 0) > 1) options.set(id, label + ' (' + owners.get(id) + ')');

@@ -24,7 +24,7 @@ export function Sidebar({ open, compact, onCollapse, onNavigate }: Props) {
   const links = [
     { to: '/personnel', label: 'Ringkasan', active: pathname === '/personnel' },
     { to: '/employees', label: 'Data pegawai', active: pathname.startsWith('/employees') && pathname !== '/employees/groups' },
-    ...(identity?.capabilities.employees_write ? [{ to: '/employees/groups', label: 'Cabang & Divisi', active: pathname === '/employees/groups' }] : []),
+    ...(identity?.capabilities.employees_write ? [{ to: '/employees/groups', label: 'Unit & Divisi', active: pathname === '/employees/groups' }] : []),
     ...(identity?.capabilities.audit_read ? [{ to: '/personnel/activity', label: 'Log aktivitas', active: pathname === '/personnel/activity' }] : []),
   ];
   useLayoutEffect(() => {

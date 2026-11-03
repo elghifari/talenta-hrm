@@ -5,9 +5,9 @@ import { expect, test } from 'vitest';
 import { EmployeeTable } from './EmployeeTable';
 
 const employees = [
-  { id: 'z', employee_code: '0010', full_name: 'Zulu', branch: 'a', branch_name: 'Cabang A', division: 'd', division_name: 'Marketing', date_of_birth: '1995-01-01' },
-  { id: 'a', employee_code: '0002', full_name: 'Alpha', branch: 'a', branch_name: 'Cabang A', division: 'd', division_name: 'Marketing', date_of_birth: null },
-  { id: 'b', employee_code: '0001', full_name: 'Beta', branch: 'b', branch_name: 'Cabang B', division: null, division_name: null, date_of_birth: '2000-01-01' },
+  { id: 'z', employee_code: '0010', full_name: 'Zulu', branch: 'a', branch_name: 'Unit A', division: 'd', division_name: 'Marketing', date_of_birth: '1995-01-01' },
+  { id: 'a', employee_code: '0002', full_name: 'Alpha', branch: 'a', branch_name: 'Unit A', division: 'd', division_name: 'Marketing', date_of_birth: null },
+  { id: 'b', employee_code: '0001', full_name: 'Beta', branch: 'b', branch_name: 'Unit B', division: null, division_name: null, date_of_birth: '2000-01-01' },
 ];
 const names = () => screen.getAllByRole('link').map(link => link.textContent);
 
@@ -15,7 +15,7 @@ test('sorts naturally in All and within groups, leaving blanks last in either di
   render(<MemoryRouter><EmployeeTable employees={employees} showPrivate /></MemoryRouter>);
   const user = userEvent.setup();
   const grouping = screen.getByRole('combobox', { name: 'Grouping' });
-  expect(within(grouping).getAllByRole('option').map(option => option.textContent)).toEqual(['Cabang/Divisi', 'Cabang', 'Divisi', 'All']);
+  expect(within(grouping).getAllByRole('option').map(option => option.textContent)).toEqual(['Unit/Divisi', 'Unit', 'Divisi', 'All']);
   expect(grouping).toHaveValue('both');
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
   await user.selectOptions(grouping, 'none');

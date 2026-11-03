@@ -23,8 +23,8 @@ def test_activity_log_real_settings_write_filters_and_responsive_layout(
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     login(page, role="hr_manager")
-    page.get_by_role("link", name="Cabang & Divisi", exact=True).click()
-    page.get_by_role("button", name="Edit cabang Synthetic Audit Branch", exact=True).click()
+    page.get_by_role("link", name="Unit & Divisi", exact=True).click()
+    page.get_by_role("button", name="Edit unit Synthetic Audit Branch", exact=True).click()
     page.get_by_role("switch", name="Kinerja", exact=True).press("Space")
     page.get_by_role("button", name="Simpan perubahan", exact=True).click()
     expect(page.get_by_role("dialog")).to_have_count(0)

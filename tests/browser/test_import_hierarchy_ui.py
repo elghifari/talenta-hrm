@@ -10,8 +10,8 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 def prepare_hierarchy():
-    first = Branch.objects.create(name="Cabang Lama")
-    second = Branch.objects.create(name="Cabang Baru")
+    first = Branch.objects.create(name="Unit Lama")
+    second = Branch.objects.create(name="Unit Baru")
     old = Division.objects.create(branch=first, name="Pelayanan")
     new = Division.objects.create(branch=second, name="Pelayanan")
     Employee.objects.filter(employee_code="0001").update(branch=first, division=old)
@@ -24,13 +24,13 @@ def preview(page, login, content):
     with page.expect_download() as download:
         page.get_by_role("link", name="Download template CSV", exact=True).click()
     headers = Path(download.value.path()).read_text(encoding="utf-8-sig").splitlines()[0]
-    assert headers.split(",")[2:4] == ["Cabang", "Divisi"]
+    assert headers.split(",")[2:4] == ["Unit", "Divisi"]
     page.get_by_label("File CSV", exact=True).set_input_files(
         {"name": "hierarki.csv", "mimeType": "text/csv", "buffer": content.encode()}
     )
     with page.expect_response(lambda response: "/api/employees/import-preview/" in response.url):
-        page.get_by_role("button", name="Pratinjau CSV", exact=True).click()
-    expect(page.get_by_role("heading", name="Pratinjau Batch Upload", exact=True)).to_be_visible()
+        page.get_by_role("button", name="Preview CSV", exact=True).click()
+    expect(page.get_by_role("heading", name="Preview Batch Upload", exact=True)).to_be_visible()
 
 
 def test_csv_hierarchy_review_persistence_and_responsive_layout(page, login, db_call):
@@ -39,16 +39,16 @@ def test_csv_hierarchy_review_persistence_and_responsive_layout(page, login, db_
     preview(
         page,
         login,
-        "ID Karyawan,Nama Lengkap,Cabang,Divisi\n"
-        "0001,Pegawai Contoh Own,Cabang Baru,Pelayanan\n"
-        "0007,Karyawan Hierarki,Cabang Baru,Pelayanan\n"
-        "0008,Karyawan Cabang,Cabang Lama,\n",
+        "ID Karyawan,Nama Lengkap,Unit,Divisi\n"
+        "0001,Pegawai Contoh Own,Unit Baru,Pelayanan\n"
+        "0007,Karyawan Hierarki,Unit Baru,Pelayanan\n"
+        "0008,Karyawan Unit,Unit Lama,\n",
     )
     expect(page.locator(".import-marker")).to_have_text(["Upd", "New", "New"])
     row = page.locator(".import-line").first
     row.locator("summary").click()
-    expect(row.get_by_role("cell", name="Cabang Lama", exact=True)).to_be_visible()
-    expect(row.get_by_role("cell", name="Cabang Baru", exact=True)).to_be_visible()
+    expect(row.get_by_role("cell", name="Unit Lama", exact=True)).to_be_visible()
+    expect(row.get_by_role("cell", name="Unit Baru", exact=True)).to_be_visible()
     expect(row.get_by_role("rowheader", name="Divisi", exact=True)).to_be_visible()
     expect(page.get_by_text(second, exact=True)).to_have_count(0)
     captures = Path(".local/import-hierarchy-acceptance")
@@ -82,12 +82,11 @@ def test_unknown_division_blocks_confirmation_without_creating_organization(page
     preview(
         page,
         login,
-        "ID Karyawan,Nama Lengkap,Cabang,Divisi\n"
-        "0007,Karyawan Hierarki,Cabang Baru,Tidak Terdaftar\n",
+        "ID Karyawan,Nama Lengkap,Unit,Divisi\n0007,Karyawan Hierarki,Unit Baru,Tidak Terdaftar\n",
     )
     expect(
         page.get_by_text(
-            "Divisi: Divisi belum terdaftar di cabang ini. Periksa nama divisi.", exact=True
+            "Divisi: Divisi belum terdaftar di unit ini. Periksa nama divisi.", exact=True
         )
     ).to_be_visible()
     expect(page.get_by_role("button", name="Konfirmasi upload", exact=True)).to_be_disabled()
@@ -101,13 +100,13 @@ def test_renamed_division_invalidates_review_without_writing_employees(page, log
     preview(
         page,
         login,
-        "ID Karyawan,Nama Lengkap,Cabang,Divisi\n0007,Karyawan Hierarki,Cabang Baru,Pelayanan\n",
+        "ID Karyawan,Nama Lengkap,Unit,Divisi\n0007,Karyawan Hierarki,Unit Baru,Pelayanan\n",
     )
     db_call(lambda: Division.objects.filter(pk=division).update(name="Pelayanan Diubah"))
     page.get_by_role("button", name="Konfirmasi upload", exact=True).click()
     expect(
         page.get_by_text(
-            "Data berubah sejak pratinjau. Upload ulang CSV untuk melihat perubahan terbaru.",
+            "Data berubah sejak preview. Upload ulang CSV untuk melihat perubahan terbaru.",
             exact=True,
         )
     ).to_be_visible()

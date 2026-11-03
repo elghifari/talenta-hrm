@@ -16,18 +16,18 @@ def test_same_named_owned_divisions_follow_branch_selection_and_persist(
     page.on("pageerror", lambda error: errors.append(str(error)))
     login(page)
     expect(page.get_by_role("link", name="Batch Upload", exact=True)).to_be_visible()
-    page.get_by_role("link", name="Cabang & Divisi", exact=True).click()
+    page.get_by_role("link", name="Unit & Divisi", exact=True).click()
     for name in ("KURI", "Sekolah"):
-        page.get_by_role("button", name="Tambah cabang", exact=True).click()
-        page.get_by_label("Nama cabang", exact=True).fill(name)
-        page.get_by_role("button", name="Simpan cabang", exact=True).click()
+        page.get_by_role("button", name="Tambah unit", exact=True).click()
+        page.get_by_label("Nama unit", exact=True).fill(name)
+        page.get_by_role("button", name="Simpan unit", exact=True).click()
         expect(
-            page.get_by_role("region", name="Tabel cabang dan divisi", exact=True).get_by_text(
+            page.get_by_role("region", name="Tabel unit dan divisi", exact=True).get_by_text(
                 name, exact=True
             )
         ).to_be_visible()
     for branch in ("KURI", "Sekolah"):
-        page.get_by_role("button", name=f"Edit cabang {branch}", exact=True).click()
+        page.get_by_role("button", name=f"Edit unit {branch}", exact=True).click()
         page.get_by_role("button", name="Tambah divisi", exact=True).click()
         page.get_by_label("Nama divisi 1", exact=True).fill("Marketing")
         page.get_by_role("button", name="Simpan perubahan", exact=True).click()
@@ -39,11 +39,11 @@ def test_same_named_owned_divisions_follow_branch_selection_and_persist(
     toggle.press("Enter")
     expect(toggle).to_have_attribute("aria-expanded", "true")
     expect(page.locator(".organization-division")).to_have_count(2)
-    page.get_by_role("button", name="Edit cabang KURI", exact=True).click()
+    page.get_by_role("button", name="Edit unit KURI", exact=True).click()
     page.get_by_label("Nama divisi 1", exact=True).fill("Marketing KURI")
     page.get_by_role("button", name="Simpan perubahan", exact=True).click()
     expect(page.get_by_role("dialog")).to_have_count(0)
-    page.get_by_role("button", name="Edit cabang KURI", exact=True).click()
+    page.get_by_role("button", name="Edit unit KURI", exact=True).click()
     page.get_by_label("Nama divisi 1", exact=True).fill("Marketing")
     page.get_by_role("button", name="Simpan perubahan", exact=True).click()
     expect(page.get_by_role("dialog")).to_have_count(0)
@@ -52,7 +52,7 @@ def test_same_named_owned_divisions_follow_branch_selection_and_persist(
         ("Marketing", "Sekolah"),
     }
     before = db_call(lambda: AuditEvent.objects.count())
-    page.get_by_role("button", name="Edit cabang Sekolah", exact=True).click()
+    page.get_by_role("button", name="Edit unit Sekolah", exact=True).click()
     page.get_by_role("button", name="Tambah divisi", exact=True).click()
     page.get_by_label("Nama divisi 2", exact=True).fill("marketing")
     page.get_by_role("button", name="Simpan perubahan", exact=True).click()
@@ -81,13 +81,13 @@ def test_same_named_owned_divisions_follow_branch_selection_and_persist(
     page.get_by_role("link", name="Ubah data", exact=True).click()
     division = page.get_by_label("Divisi", exact=True)
     expect(division).to_be_disabled()
-    page.get_by_label("Cabang", exact=True).select_option(label="KURI")
+    page.get_by_label("Unit", exact=True).select_option(label="KURI")
     expect(division.get_by_role("option")).to_have_count(2)
     assert division.get_by_role("option").evaluate_all(
         "options => options.map(option => option.value)"
     ) == ["", choices["KURI"]["division"]]
     division.select_option(label="Marketing")
-    page.get_by_label("Cabang", exact=True).select_option(label="Sekolah")
+    page.get_by_label("Unit", exact=True).select_option(label="Sekolah")
     expect(division).to_have_value("")
     assert division.get_by_role("option").evaluate_all(
         "options => options.map(option => option.value)"

@@ -3,10 +3,12 @@ import { validClassification } from '../classification';
 
 export type ImportStatus = 'new' | 'update' | 'unchanged' | 'error';
 export type ImportValues = Record<string, string | null>;
+export type MissingHierarchy = { kind: 'branch' | 'division'; name: string; branch_name: string | null };
 export type ImportRow = {
   row: number; employee_code: string; full_name: string; status: ImportStatus;
   current: ImportValues | null; incoming: ImportValues; changes: string[];
   errors: Record<string, string[]>;
+  missing_hierarchy?: MissingHierarchy[];
 };
 export type ImportBatch = {
   id: string; state: 'pending' | 'committed'; expires_at: string;
@@ -22,6 +24,7 @@ export function decodeBatch(value: unknown): ImportBatch {
   for (const row of batch.rows) {
     if (!row || !Number.isInteger(row.row) || typeof row.employee_code !== 'string' || typeof row.full_name !== 'string' || !statuses.includes(row.status) || (row.current !== null && !values(row.current)) || !values(row.incoming) || !Array.isArray(row.changes) || !row.changes.every(key => typeof key === 'string') || !row.errors || !Object.values(row.errors).every(error => Array.isArray(error) && error.every(text => typeof text === 'string'))) throw new ApiError('protocol', 200, null, null);
     const invalidFields = row.status === 'error' ? Object.keys(row.errors).filter(key => row.errors[key].length > 0) : [];
+    if (row.missing_hierarchy !== undefined && (!Array.isArray(row.missing_hierarchy) || row.missing_hierarchy.length > 2 || row.missing_hierarchy.some(item => !item || !['branch', 'division'].includes(item.kind) || typeof item.name !== 'string' || !item.name.trim() || (item.branch_name !== null && typeof item.branch_name !== 'string')))) throw new ApiError('protocol', 200, null, null);
     if ((row.current && !validClassification(row.current)) || !validClassification(row.incoming, invalidFields)) throw new ApiError('protocol', 200, null, null);
   }
   if (batch.state === 'pending' && Object.values(batch.summary).reduce((sum, count) => sum + count, 0) !== batch.rows.length) throw new ApiError('protocol', 200, null, null);
@@ -38,8 +41,8 @@ export async function confirmBatch(request: typeof apiRequest, id: string, signa
 }
 export function importError(error: unknown) {
   if (error instanceof ApiError) {
-    if (error.status === 404 || error.status === 410) return 'Pratinjau tidak tersedia atau sudah kedaluwarsa. Upload ulang CSV.';
-    if (error.status === 409) return 'Data berubah sejak pratinjau. Upload ulang CSV untuk melihat perubahan terbaru.';
+    if (error.status === 404 || error.status === 410) return 'Preview tidak tersedia atau sudah kedaluwarsa. Upload ulang CSV.';
+    if (error.status === 409) return 'Data berubah sejak preview. Upload ulang CSV untuk melihat perubahan terbaru.';
     if (error.status === 400 && error.body && typeof error.body === 'object') return Object.values(error.body).flat().filter(value => typeof value === 'string').join(' ') || 'CSV tidak valid. Periksa file, lalu upload ulang.';
   }
   return errorText(error);

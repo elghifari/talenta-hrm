@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 def add_choice(page, label, name, owner=None):
     if owner:
-        page.get_by_role("button", name=f"Edit cabang {owner}", exact=True).click()
+        page.get_by_role("button", name=f"Edit unit {owner}", exact=True).click()
         page.get_by_role("button", name="Tambah divisi", exact=True).click()
         page.get_by_label("Nama divisi 1", exact=True).fill(name)
         page.get_by_role("button", name="Simpan perubahan", exact=True).click()
@@ -20,7 +20,7 @@ def add_choice(page, label, name, owner=None):
         page.get_by_role("button", name=f"Tambah {label}", exact=True).click()
         page.get_by_label(f"Nama {label}", exact=True).fill(name)
         page.get_by_role("button", name=f"Simpan {label}", exact=True).click()
-    panel = page.get_by_role("region", name="Tabel cabang dan divisi", exact=True)
+    panel = page.get_by_role("region", name="Tabel unit dan divisi", exact=True)
     expect(panel.get_by_text(name, exact=True)).to_be_visible()
     return panel
 
@@ -87,25 +87,25 @@ def test_hr_manages_assigns_filters_and_manager_scope_stays_intact(
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     login(page)
-    page.get_by_role("link", name="Cabang & Divisi", exact=True).click()
-    branch_panel = add_choice(page, "cabang", "Cabang Sintetis A")
-    add_choice(page, "divisi", "Pelayanan Sintetis", owner="Cabang Sintetis A")
-    branch_panel.get_by_role("button", name="Edit cabang Cabang Sintetis A", exact=True).click()
-    page.get_by_label("Nama cabang", exact=True).fill("Cabang Sintetis Baru")
+    page.get_by_role("link", name="Unit & Divisi", exact=True).click()
+    branch_panel = add_choice(page, "unit", "Unit Sintetis A")
+    add_choice(page, "divisi", "Pelayanan Sintetis", owner="Unit Sintetis A")
+    branch_panel.get_by_role("button", name="Edit unit Unit Sintetis A", exact=True).click()
+    page.get_by_label("Nama unit", exact=True).fill("Unit Sintetis Baru")
     page.get_by_role("button", name="Simpan perubahan", exact=True).click()
-    expect(branch_panel.get_by_text("Cabang Sintetis Baru", exact=True)).to_be_visible()
+    expect(branch_panel.get_by_text("Unit Sintetis Baru", exact=True)).to_be_visible()
     page.get_by_role("link", name="Data pegawai", exact=True).click()
     page.get_by_role("link", name="Pegawai Contoh Own", exact=True).click()
     page.get_by_role("link", name="Ubah data", exact=True).click()
-    page.get_by_label("Cabang", exact=True).select_option(label="Cabang Sintetis Baru")
+    page.get_by_label("Unit", exact=True).select_option(label="Unit Sintetis Baru")
     page.get_by_label("Divisi", exact=True).select_option(label="Pelayanan Sintetis")
     page.get_by_role("button", name="Simpan perubahan", exact=True).click()
     expect(page.get_by_role("heading", name="Pegawai Contoh Own", exact=True)).to_be_visible()
     page.reload()
-    expect(page.get_by_text("Cabang Sintetis Baru", exact=True)).to_be_visible()
+    expect(page.get_by_text("Unit Sintetis Baru", exact=True)).to_be_visible()
     assert (
         db_call(lambda: Employee.objects.get(pk=synthetic_data.records["own"].pk).branch.name)
-        == "Cabang Sintetis Baru"
+        == "Unit Sintetis Baru"
     )
     assert db_call(lambda: EmployeeAssignment.objects.count()) == 5
     assert db_call(lambda: UnitAccess.objects.count()) == 2
@@ -123,12 +123,12 @@ def test_hr_manages_assigns_filters_and_manager_scope_stays_intact(
         "link", name="Data pegawai", exact=True
     ).click()
     branch_id = groups["branch"]
-    page.get_by_label("Cabang", exact=True).select_option(branch_id)
+    page.get_by_label("Unit", exact=True).select_option(branch_id)
     expect(page.locator(".employee-data-row")).to_have_count(2)
     expect(page.get_by_role("link", name="Pegawai Contoh Outside", exact=True)).to_be_visible()
     page.get_by_label("Grouping", exact=True).select_option("none")
     expect(page.get_by_label("Grouping", exact=True).locator("option:checked")).to_have_text("All")
-    expect(page.get_by_role("columnheader", name="Cabang", exact=True)).to_be_visible()
+    expect(page.get_by_role("columnheader", name="Unit", exact=True)).to_be_visible()
     sort = page.get_by_label("Sort by", exact=True)
     sort.select_option("full_name")
     ordered = page.locator(".employee-data-row a").all_text_contents()
@@ -159,7 +159,7 @@ def test_hr_manages_assigns_filters_and_manager_scope_stays_intact(
     login(page, role="manager")
     expect(page.get_by_role("link", name="Pegawai Contoh Own", exact=True)).to_be_visible()
     expect(page.get_by_role("link", name="Pegawai Contoh Outside", exact=True)).to_have_count(0)
-    expect(page.get_by_role("link", name="Cabang & Divisi", exact=True)).to_have_count(0)
+    expect(page.get_by_role("link", name="Unit & Divisi", exact=True)).to_have_count(0)
     expect(page.get_by_role("columnheader", name="Tanggal lahir", exact=True)).to_have_count(0)
     expect(page.locator(".employee-data-row")).to_have_count(2)
     before = db_call(lambda: AuditEvent.objects.count())
@@ -179,7 +179,7 @@ def test_hr_manages_assigns_filters_and_manager_scope_stays_intact(
 
 def test_uncertain_reference_create_is_not_replayed(page, login, live_server, db_call):
     login(page)
-    page.get_by_role("link", name="Cabang & Divisi", exact=True).click()
+    page.get_by_role("link", name="Unit & Divisi", exact=True).click()
     posts = []
 
     def lose_response(route):
@@ -191,15 +191,15 @@ def test_uncertain_reference_create_is_not_replayed(page, login, live_server, db
             route.continue_()
 
     page.route("**/api/organization/branches/", lose_response)
-    page.get_by_role("button", name="Tambah cabang", exact=True).click()
-    page.get_by_label("Nama cabang", exact=True).fill("Cabang Hasil Tidak Pasti")
-    page.get_by_role("button", name="Simpan cabang", exact=True).click()
+    page.get_by_role("button", name="Tambah unit", exact=True).click()
+    page.get_by_label("Nama unit", exact=True).fill("Unit Hasil Tidak Pasti")
+    page.get_by_role("button", name="Simpan unit", exact=True).click()
     expect(page.get_by_role("button", name="Periksa daftar terbaru", exact=True)).to_be_visible()
-    expect(page.get_by_role("button", name="Tambah cabang", exact=True)).to_be_disabled()
+    expect(page.get_by_role("button", name="Tambah unit", exact=True)).to_be_disabled()
     page.get_by_role("button", name="Periksa daftar terbaru", exact=True).click()
     expect(
-        page.get_by_role("region", name="Tabel cabang dan divisi", exact=True).get_by_text(
-            "Cabang Hasil Tidak Pasti", exact=True
+        page.get_by_role("region", name="Tabel unit dan divisi", exact=True).get_by_text(
+            "Unit Hasil Tidak Pasti", exact=True
         )
     ).to_be_visible()
     assert len(posts) == 1

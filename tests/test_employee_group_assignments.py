@@ -14,7 +14,7 @@ pytestmark = pytest.mark.django_db
 
 def choices(client):
     branch = client.post(
-        "/api/organization/branches/", {"name": "Cabang Contoh"}, content_type="application/json"
+        "/api/organization/branches/", {"name": "Unit Contoh"}, content_type="application/json"
     ).json()
     division = client.post(
         "/api/organization/divisions/",
@@ -94,7 +94,7 @@ def test_manager_grouping_is_read_only_and_cannot_expand_unit_scope(hr, django_u
     )
     visible = reader.get("/api/employees/").json()
     assert [item["employee_code"] for item in visible] == ["0011"]
-    assert visible[0]["branch_name"] == "Cabang Contoh"
+    assert visible[0]["branch_name"] == "Unit Contoh"
     assert visible[0]["division_name"] == "Divisi Contoh"
     assert not {
         "date_of_birth",
@@ -162,12 +162,10 @@ def test_reference_names_reject_duplicates_blank_and_unknown_fields(hr, kind):
     client, _ = hr
     url = f"/api/organization/{kind}/"
     owner = {"branch": str(Branch.objects.create(name="Owner").pk)} if kind == "divisions" else {}
-    first = client.post(
-        url, {"name": "  Cabang   Contoh ", **owner}, content_type="application/json"
-    )
+    first = client.post(url, {"name": "  Unit   Contoh ", **owner}, content_type="application/json")
     assert first.status_code == 201
     for data in [
-        {"name": "cabang contoh"},
+        {"name": "unit contoh"},
         {"name": " \t "},
         {"name": "x" * 151},
         {"name": "Other", "id": str(uuid4())},

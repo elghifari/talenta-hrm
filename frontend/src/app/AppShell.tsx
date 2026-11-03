@@ -4,6 +4,7 @@ import { errorText } from '../api/client';
 import { useSession } from '../auth/SessionProvider';
 import { Breadcrumbs } from './Breadcrumbs';
 import { Sidebar } from './Sidebar';
+import type { ImportFile } from '../employees/imports/source';
 const mobileQuery = '(max-width: 680px)';
 function subscribeMobile(listener: () => void) {
   const query = window.matchMedia?.(mobileQuery);
@@ -14,6 +15,7 @@ function mobileSnapshot() { return window.matchMedia?.(mobileQuery).matches ?? f
 export function AppShell() {
   const session = useSession(); const location = useLocation();
   const [dirty, setDirty] = useState(false);
+  const [importFile, setImportFile] = useState<ImportFile | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const mobile = useSyncExternalStore(subscribeMobile, mobileSnapshot);
   const compact = collapsed && !mobile;
@@ -26,6 +28,6 @@ export function AppShell() {
     <a className="skip-link" href="#main">Ke konten utama</a>
     <Sidebar open={menu} compact={compact} onCollapse={() => setCollapsed(value => !value)} onNavigate={() => { if (mobile) closeMenu(); else setMenu(false); }} />
     <div className="workspace"><header className="app-header"><button className="menu-toggle" ref={menuButton} aria-expanded={menu} aria-controls="primary-nav" onClick={() => setMenu(x => !x)}>Menu</button><div className="account"><span>{session.identity?.email}</span><button disabled={session.busy} onClick={() => { if (dirty && !window.confirm('Perubahan belum disimpan. Keluar dari akun?')) return; setError(''); session.logout().catch(e => setError(errorText(e))); }}>Keluar</button></div></header>
-    <main id="main" className="content" ref={main}>{error && <p className="error" role="alert">{error}</p>}{session.identity?.capabilities.employees_read ? <><Breadcrumbs /><Outlet context={{ setDirty }} /></> : <><h1>Akses tidak tersedia</h1><p>Akun ini tidak memiliki izin untuk melihat data pegawai.</p><Link to="/login">Periksa akun</Link></>}</main></div>
+    <main id="main" className="content" ref={main}>{error && <p className="error" role="alert">{error}</p>}{session.identity?.capabilities.employees_read ? <><Breadcrumbs /><Outlet context={{ setDirty, importFile, setImportFile }} /></> : <><h1>Akses tidak tersedia</h1><p>Akun ini tidak memiliki izin untuk melihat data pegawai.</p><Link to="/login">Periksa akun</Link></>}</main></div>
   </div>;
 }

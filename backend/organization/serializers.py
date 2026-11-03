@@ -27,7 +27,7 @@ class ReferenceSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {
                         "branch": [
-                            "Cabang pemilik tidak dapat diubah. Buat divisi baru di cabang tujuan."
+                            "Unit pemilik tidak dapat diubah. Buat divisi baru di unit tujuan."
                         ]
                     }
                 )

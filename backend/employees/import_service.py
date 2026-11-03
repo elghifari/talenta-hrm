@@ -16,7 +16,7 @@ from .serializers import EmployeeSerializer
 
 class PreviewExpired(APIException):
     status_code = 410
-    default_detail = "Pratinjau sudah kedaluwarsa. Upload ulang CSV."
+    default_detail = "Preview sudah kedaluwarsa. Upload ulang CSV."
 
 
 def session_fingerprint(request):
@@ -68,9 +68,7 @@ def create_preview(request, upload):
 
 class ImportConflict(APIException):
     status_code = 409
-    default_detail = (
-        "Data berubah sejak pratinjau. Upload ulang CSV untuk melihat perubahan terbaru."
-    )
+    default_detail = "Data berubah sejak preview. Upload ulang CSV untuk melihat perubahan terbaru."
 
 
 def lock_hierarchy(rows):

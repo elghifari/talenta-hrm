@@ -7,7 +7,7 @@ const marker = { new: 'New', update: 'Upd', unchanged: '-', error: '!' };
 const statusLabel = { new: 'Karyawan baru', update: 'Diperbarui', unchanged: 'Tidak berubah', error: 'Perlu diperbaiki' };
 const importFields: { key: string; label: string; valueKey: string }[] = [
   ...employeeFields.slice(0, 2).map(field => ({ ...field, valueKey: field.key })),
-  { key: 'branch', label: 'Cabang', valueKey: 'branch_name' },
+  { key: 'branch', label: 'Unit', valueKey: 'branch_name' },
   { key: 'division', label: 'Divisi', valueKey: 'division_name' },
   ...employeeFields.slice(2).map(field => ({ ...field, valueKey: field.key })),
   ...classificationFields.map(field => ({ ...field, valueKey: field.key })),
@@ -21,7 +21,7 @@ export function ImportComparison({ row }: { row: ImportRow }) {
   return <li className="import-line">
     <span className={'import-marker ' + (row.status === 'error' ? 'error' : '')} aria-label={statusLabel[row.status]}>{marker[row.status]}</span>
     <details className="import-record" open={row.status === 'error'}>
-      <summary className="import-summary"><span className="employee-code"><span className="mobile-label">ID Karyawan</span>{row.employee_code || 'Belum diisi'}</span><strong><span className="mobile-label">Nama lengkap</span>{row.full_name || 'Belum diisi'}</strong><span>{summary}<span className="import-action"><span className="when-closed">{row.status === 'update' ? 'Lihat perubahan' : 'Lihat data'}</span><span className="when-open">Tutup rincian</span></span></span></summary>
+      <summary className="import-summary"><span className="import-row-number"><span className="mobile-label">Baris CSV</span>{row.row}</span><span className="employee-code"><span className="mobile-label">ID Karyawan</span>{row.employee_code || 'Belum diisi'}</span><strong><span className="mobile-label">Nama lengkap</span>{row.full_name || 'Belum diisi'}</strong><span>{summary}<span className="import-action"><span className="when-closed">{row.status === 'update' ? 'Lihat perubahan' : 'Lihat data'}</span><span className="when-open">Tutup rincian</span></span></span></summary>
       <div className="import-comparison">
         {Object.entries(row.errors).map(([key, messages]) => <p className="error" key={key}>{importLabel(key)}: {messages.join(' ')}</p>)}
         {row.status === 'update' && <button className="comparison-toggle" onClick={() => setAll(value => !value)}>{all ? 'Hanya perubahan' : 'Lihat semua kolom'}</button>}

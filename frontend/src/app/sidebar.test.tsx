@@ -19,7 +19,7 @@ test('Personnel discloses a second navigation level without the workspace label'
   expect(personnel).toHaveAttribute('aria-expanded', 'true');
   expect(within(nav).getByRole('link', { name: 'Ringkasan' })).toHaveAttribute('href', '/personnel');
   expect(within(nav).getByRole('link', { name: 'Data pegawai' })).toHaveAttribute('aria-current', 'page');
-  expect(within(nav).getByRole('link', { name: 'Cabang & Divisi' })).toBeVisible();
+  expect(within(nav).getByRole('link', { name: 'Unit & Divisi' })).toBeVisible();
   expect(within(nav).getByRole('link', { name: 'Log aktivitas' })).toBeVisible();
   expect(screen.queryByText(/ruang kerja/i)).not.toBeInTheDocument();
   await user.click(personnel);
@@ -63,6 +63,6 @@ test('navigation keeps write and audit destinations out of a read-only account',
   render(<App initialEntries={['/employees']} />);
   const nav = await screen.findByRole('navigation', { name: 'Modul' });
   expect(within(nav).getByRole('link', { name: 'Data pegawai' })).toBeVisible();
-  expect(within(nav).queryByRole('link', { name: 'Cabang & Divisi' })).not.toBeInTheDocument();
+  expect(within(nav).queryByRole('link', { name: 'Unit & Divisi' })).not.toBeInTheDocument();
   expect(within(nav).queryByRole('link', { name: 'Log aktivitas' })).not.toBeInTheDocument();
 });

@@ -2,7 +2,7 @@ import { ApiError } from '../api/client';
 
 export const actions = {
   'employee.created': 'Pegawai ditambahkan', 'employee.updated': 'Data pegawai diubah',
-  'branch.created': 'Cabang ditambahkan', 'branch.updated': 'Cabang diubah',
+  'branch.created': 'Unit ditambahkan', 'branch.updated': 'Unit diubah',
   'division.created': 'Divisi ditambahkan', 'division.updated': 'Divisi diubah',
   'division.deleted': 'Divisi dihapus', 'division.settings_changed': 'Pengaturan divisi diubah',
 };

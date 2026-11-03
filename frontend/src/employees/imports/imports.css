@@ -1,11 +1,27 @@
 .primary.secondary { background: white; color: #25496a; border-color: #77818c; }
 .primary.secondary:hover { background: #edf1f4; color: #163049; }
+.import-reference-fixes { margin: 24px 0; padding: 18px; border: 1px solid #cbd4dd; border-left: 4px solid #315a85; background: white; }
+.import-reference-fixes h2 { margin-top: 0; }
+.import-reference-fixes p, .import-repreview p { overflow-wrap: anywhere; }
+.missing-unit-list { list-style: none; padding: 0; margin: 18px 0; }
+.missing-unit-list > li + li { margin-top: 18px; }
+.missing-reference-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 14px; }
+.missing-reference-row > div { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.missing-unit-heading { background: #f2f5f8; border: 1px solid #cbd4dd; }
+.missing-unit-heading strong { font-weight: 700; }
+.missing-unit-list p { margin: 5px 0 0; }
+.missing-division-list { list-style: none; margin: 0 0 0 24px; padding: 0 0 0 12px; border-left: 2px solid #77818c; }
+.missing-division-list > li { border-bottom: 1px solid #cbd4dd; }
+.missing-division-list strong { font-weight: 600; }
+.import-repreview { margin: 24px 0; max-width: 740px; }
+.import-repreview input { max-width: 100%; }
 .page-heading > .form-actions { margin-top: 0; }
 .import-rows { list-style: none; padding: 0; margin: 0 0 24px; }
 .import-line { display: grid; grid-template-columns: 3.1rem minmax(0, 1fr); gap: 8px; align-items: start; }
 .import-marker { padding-top: 15px; text-align: center; font-size: .8rem; font-weight: 700; color: #25496a; }
 .import-marker.error { color: #94332a; }
-.import-head, .import-summary { display: grid; grid-template-columns: minmax(6rem, .6fr) minmax(0, 1fr) minmax(0, 1.4fr); gap: 18px; padding: 14px 18px; font-size: .875rem; }
+.import-head, .import-summary { display: grid; grid-template-columns: 4.5rem minmax(6rem, .6fr) minmax(0, 1fr) minmax(0, 1.4fr); gap: 18px; padding: 14px 18px; font-size: .875rem; }
+.import-row-number { font-variant-numeric: tabular-nums; color: #526171; }
 .import-head { margin-left: calc(3.1rem + 8px); background: #f2f5f8; border: 1px solid #cbd4dd; color: #526171; font-size: .75rem; font-weight: 600; }
 .import-record { min-width: 0; background: white; border: 1px solid #cbd4dd; border-top: 0; }
 .import-summary { list-style: none; cursor: pointer; min-height: 68px; }
@@ -24,8 +40,11 @@ details[open] .when-open { display: inline; }
 .diff-table td { padding: 12px; vertical-align: top; }
 .diff-table th[scope=row] { background: #f7f9fb; color: #26303a; overflow-wrap: anywhere; vertical-align: top; }
 @media (max-width: 680px) {
+  .missing-division-list { margin-left: 12px; padding-left: 8px; }
+  .missing-reference-row { padding: 12px; }
   .import-head { display: none; }
   .import-summary { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px; }
+  .import-row-number .mobile-label { display: inline; margin-right: 6px; }
   .import-line { grid-template-columns: 2.6rem minmax(0, 1fr); gap: 6px; }
   .import-line:first-child .import-record { border-top: 1px solid #cbd4dd; }
   .import-comparison { padding: 0 14px 14px; }
