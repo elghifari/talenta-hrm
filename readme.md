@@ -1,6 +1,6 @@
 # Talenta HRM
 
-Employee administration for Talenta Center, built with Django and PostgreSQL.
+Employee administration for Talenta Center, built with Django/DRF, React/TypeScript and PostgreSQL.
 
 Talenta HRM is in active development, starting with employee records, unit-based access and compensation history. Attendance, payroll and applicant workflows are planned.
 
@@ -8,9 +8,11 @@ Talenta HRM is in active development, starting with employee records, unit-based
 
 - HR can sign in through the React interface and create, view and update employee records.
 - Unit managers can read employees in units they have been granted access to.
-- Personnel includes a dashboard, employee records and Cabang/Divisi management.
+- Personnel includes a dashboard, employee records and Unit/Divisi management, with a collapsible two-level sidebar.
+- HR can review CSV imports, explicitly add missing Unit/Divisi references from the preview and preview again before confirming. Legacy `Cabang` CSV headers remain accepted.
+- Employee records include employment status and editable PKWT type. Document generation is not implemented.
 - HR can read compensation history separately from employee identity records.
-- Employee and organization changes are audited.
+- Employee and organization changes are audited. Active accounts with both HR and HR Manager roles can browse and filter the activity log.
 
 ## Local development
 
@@ -72,26 +74,19 @@ uv run --env-file .env python backend/manage.py check
 
 Use the same environment for migrations, the server and tests. The migration role must be able to enable `btree_gist`, or a database administrator must enable it first. Tests create and destroy a separate `test_` database, so the test role needs `CREATEDB`. Never point tests at production.
 
-### Backend
+### First-time backend and account setup
 
-With PostgreSQL running:
+With PostgreSQL running, copy `.env.example` to `.env` if the file does not already exist. Check its `DATABASE_URL` before proceeding. The commands below use that same file for migrations, account creation and startup.
 
 ```bash
 uv sync --frozen
-uv run python backend/manage.py migrate --noinput
-uv run python backend/manage.py bootstrap_roles
-uv run python backend/manage.py runserver 127.0.0.1:8085
+uv run --env-file .env python backend/manage.py migrate --noinput
+uv run --env-file .env python backend/manage.py bootstrap_roles
 ```
 
 `bootstrap_roles` creates groups only. It does not create users or grant access. A technical superuser is not automatically an HR approver, and there is no account-administration interface yet.
 
-For a synthetic local HR login, open the management shell:
-
-```bash
-uv run python backend/manage.py shell
-```
-
-Create the account once, entering its password through the terminal prompt:
+For a synthetic local HR login, create the `scripts` folder if needed and save the following as `scripts/create_local_hr.py`:
 
 ```python
 from getpass import getpass
@@ -106,7 +101,25 @@ call_command("bootstrap_roles")
 user.groups.add(Group.objects.get(name="HR"))
 ```
 
-Use an isolated synthetic database. Unit-manager accounts additionally need explicit unit grants through trusted maintenance. Setup and browser tests do not create permanent development login accounts.
+Run once per new account, entering the password at the terminal prompt:
+
+```bash
+uv run --env-file .env python backend/manage.py shell -c "exec(open('scripts/create_local_hr.py', encoding='utf-8').read())"
+```
+
+Skip account creation if that email already exists. Rerunning the script fails on the duplicate email; it does not reset the existing password. Repeating `bootstrap_roles` is safe and does not duplicate groups.
+
+Use an isolated synthetic database. Unit-manager accounts additionally need explicit unit grants through trusted maintenance. The activity log requires both `HR` and `HR_MANAGER`; `bootstrap_roles` does not create `HR_MANAGER`. Create and assign that additional role only when explicitly authorized. Browser tests create accounts only in their disposable test database.
+
+### Start the backend
+
+For later sessions, start the existing PostgreSQL cluster as described above, then run:
+
+```bash
+uv run --env-file .env python backend/manage.py runserver 127.0.0.1:8085
+```
+
+Do not repeat database initialization or account creation for daily startup. Apply migrations after code updates when required.
 
 ### Frontend
 
@@ -129,7 +142,7 @@ With Django running, open `http://127.0.0.1:8085`. Development settings serve th
 
 ## Checks
 
-Keep PostgreSQL running. Ordinary backend checks do not require Chromium:
+Keep PostgreSQL running. If using `.env`, pass `--env-file .env` to each `uv run` command below so checks use the same database configuration. Ordinary backend checks do not require Chromium:
 
 ```bash
 uv run pytest -q

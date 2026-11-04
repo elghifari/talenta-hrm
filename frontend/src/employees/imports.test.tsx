@@ -31,10 +31,10 @@ test('CSV stays in memory and is uploaded as multipart before an incoming-only s
   render(<App initialEntries={['/employees/import']} />);
   const input = await screen.findByLabelText('File CSV');
   expect(screen.getByRole('link', { name: 'Download template CSV' })).toHaveAttribute('download');
-  expect(screen.getByRole('button', { name: 'Pratinjau CSV' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Preview CSV' })).toBeDisabled();
   await user.upload(input, new File(['Nama Lengkap,ID Karyawan\nKaryawan B,0002\n'], 'karyawan.csv', { type: 'text/csv' }));
-  await user.click(screen.getByRole('button', { name: 'Pratinjau CSV' }));
-  expect(await screen.findByRole('heading', { name: 'Pratinjau Batch Upload' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Preview CSV' }));
+  expect(await screen.findByRole('heading', { name: 'Preview Batch Upload' })).toBeInTheDocument();
   expect(await screen.findByText('Karyawan B', { selector: 'strong' })).toBeInTheDocument();
   expect(screen.getByText('New')).toBeInTheDocument();
   expect(screen.queryByText('Karyawan A')).not.toBeInTheDocument();

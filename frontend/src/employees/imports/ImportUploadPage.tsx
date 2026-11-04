@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useOutletContext } from 'react-router';
 import { isAbort } from '../../api/client';
 import { PageTitle } from '../../app/PageTitle';
 import { useSession } from '../../auth/SessionProvider';
 import { importError, previewCsv } from './api';
+import type { ImportSource } from './source';
 
 export function ImportUploadPage() {
   const { identity, request } = useSession(); const navigate = useNavigate();
+  const { setImportFile } = useOutletContext<ImportSource>();
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const controller = useRef(new AbortController());
@@ -17,7 +19,7 @@ export function ImportUploadPage() {
     setBusy(true); setError('');
     try {
       const batch = await previewCsv(request, file, controller.current.signal);
-      if (!controller.current.signal.aborted) navigate('/employees/imports/' + batch.id);
+      if (!controller.current.signal.aborted) { setImportFile({ batchId: batch.id, file }); navigate('/employees/imports/' + batch.id); }
     } catch (failure) {
       if (!controller.current.signal.aborted && !isAbort(failure)) setError(importError(failure));
     } finally { if (!controller.current.signal.aborted) setBusy(false); }
@@ -29,9 +31,9 @@ export function ImportUploadPage() {
       <p><a className="back" href="/api/employees/import-template/" download>Download template CSV</a></p>
       <p className="hint" id="csv-help">CSV UTF-8, maksimal 1 MiB dan 500 baris. Urutan kolom bebas. ID Karyawan dan Nama Lengkap wajib ada.</p>
       <p className="hint">Tanggal menggunakan YYYY-MM-DD. Kolom atau sel opsional yang kosong tidak menghapus data lama.</p>
-      <p className="hint">Isi Cabang dan Divisi sesuai nama di Cabang &amp; Divisi. Divisi harus berada di Cabang yang dipilih.</p>
+      <p className="hint">Isi Unit dan Divisi sesuai nama di Unit &amp; Divisi. Divisi harus berada di Unit yang dipilih.</p>
       <div className="form-field"><label htmlFor="csv-file">File CSV</label><input id="csv-file" type="file" accept=".csv,text/csv" aria-describedby="csv-help" disabled={busy} onChange={event => { setFile(event.target.files?.[0] ?? null); setError(''); }} /></div>
       {error && <p className="error" role="alert">{error}</p>}
-      <div className="form-actions"><button className="primary" disabled={!file || busy}>{busy ? 'Memuat pratinjau…' : 'Pratinjau CSV'}</button><Link className="primary secondary" to="/employees">Batal</Link></div>
+      <div className="form-actions"><button className="primary" disabled={!file || busy}>{busy ? 'Memuat preview…' : 'Preview CSV'}</button><Link className="primary secondary" to="/employees">Batal</Link></div>
     </form></>;
 }

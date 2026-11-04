@@ -51,5 +51,5 @@ test('manager detail does not render private profile fields or organization mana
   setup('detail', false);
   await screen.findByRole('heading', { name: 'Synthetic Employee' });
   for (const label of Object.values(labels)) expect(screen.queryByText(label)).not.toBeInTheDocument();
-  expect(screen.queryByRole('link', { name: 'Cabang & Divisi' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: 'Unit & Divisi' })).not.toBeInTheDocument();
 });

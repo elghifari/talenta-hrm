@@ -29,7 +29,7 @@ export async function saveChoice(request: typeof apiRequest, kind: GroupKind, in
 }
 export function choiceError(error: unknown) {
   if (error instanceof ApiError && error.status === 400 && error.body && typeof error.body === 'object') {
-    const messages = Object.entries(error.body).filter(([key]) => key === 'name' || key === 'branch').flatMap(([key, value]) => Array.isArray(value) && value.every(item => typeof item === 'string') ? [(key === 'branch' ? 'Cabang: ' : '') + value.join(' ')] : []);
+    const messages = Object.entries(error.body).filter(([key]) => key === 'name' || key === 'branch').flatMap(([key, value]) => Array.isArray(value) && value.every(item => typeof item === 'string') ? [(key === 'branch' ? 'Unit: ' : '') + value.join(' ')] : []);
     if (messages.length) return messages.join(' ');
   }
   return errorText(error);

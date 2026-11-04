@@ -17,11 +17,11 @@ pytestmark = pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("target", ["branch", "division"])
 def test_confirmation_locks_reviewed_names_until_employee_and_audit_commit(hr, monkeypatch, target):
     client, _ = hr
-    branch = Branch.objects.create(name="Cabang Utama")
+    branch = Branch.objects.create(name="Unit Utama")
     division = Division.objects.create(branch=branch, name="Pelayanan")
     draft = upload(
         client,
-        "ID Karyawan,Nama Lengkap,Cabang,Divisi\n0010,Karyawan Hierarki,Cabang Utama,Pelayanan\n",
+        "ID Karyawan,Nama Lengkap,Unit,Divisi\n0010,Karyawan Hierarki,Unit Utama,Pelayanan\n",
     ).json()
     entered, release = Event(), Event()
     original = EmployeeSerializer.is_valid
@@ -53,4 +53,4 @@ def test_confirmation_locks_reviewed_names_until_employee_and_audit_commit(hr, m
     assert AuditEvent.objects.count() == 1
     branch.refresh_from_db()
     division.refresh_from_db()
-    assert (branch.name, division.name) == ("Cabang Utama", "Pelayanan")
+    assert (branch.name, division.name) == ("Unit Utama", "Pelayanan")

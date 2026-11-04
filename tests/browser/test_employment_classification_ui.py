@@ -123,8 +123,8 @@ def test_csv_classification_review_clear_persistence_and_replay(page, login, db_
     page.get_by_label("File CSV", exact=True).set_input_files(
         {"name": "klasifikasi.csv", "mimeType": "text/csv", "buffer": content.encode()}
     )
-    page.get_by_role("button", name="Pratinjau CSV", exact=True).click()
-    expect(page.get_by_role("heading", name="Pratinjau Batch Upload", exact=True)).to_be_visible()
+    page.get_by_role("button", name="Preview CSV", exact=True).click()
+    expect(page.get_by_role("heading", name="Preview Batch Upload", exact=True)).to_be_visible()
     expect(page.locator(".import-marker")).to_have_text(["Upd", "New"])
     row = page.locator(".import-line").first
     row.locator("summary").click()

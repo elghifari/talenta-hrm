@@ -16,12 +16,19 @@ from playwright.sync_api import expect
 def synthetic_data(django_user_model):
     today = timezone.localdate()
     users = {}
-    for role, group in [("hr", "HR"), ("manager", "KEPALA_UNIT"), ("finance", "FINANCE")]:
+    for role, group in [
+        ("hr", "HR"),
+        ("manager", "KEPALA_UNIT"),
+        ("finance", "FINANCE"),
+        ("hr_manager", "HR"),
+    ]:
         email = f"{role}@example.test"
         user = django_user_model.objects.create_user(
             email=email, password="Synthetic-browser-only-42"
         )
         user.groups.add(Group.objects.get_or_create(name=group)[0])
+        if role == "hr_manager":
+            user.groups.add(Group.objects.get_or_create(name="HR_MANAGER")[0])
         users[role] = SimpleNamespace(user=user, email=email, password="Synthetic-browser-only-42")
     a = Unit.objects.create(code="SYN-A", name="Synthetic A")
     b = Unit.objects.create(code="SYN-B", name="Synthetic B", parent=a)

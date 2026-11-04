@@ -34,7 +34,7 @@ function setup(loseResponse = false, persist = true) {
 
 test('HR edits independent Divisi switches and includes reviewed settings in the combined save', async () => {
   const { user, writes } = setup();
-  await user.click(await screen.findByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(await screen.findByRole('button', { name: 'Edit unit Synthetic Branch' }));
   const group = within(screen.getByRole('group', { name: 'Pengaturan divisi Synthetic Division' }));
   const kinerja = group.getByRole('switch', { name: 'Kinerja' });
   const pelimpahan = group.getByRole('switch', { name: 'Pelimpahan' });
@@ -46,13 +46,13 @@ test('HR edits independent Divisi switches and includes reviewed settings in the
   await user.click(pelimpahan);
   expect(kinerja).toBeChecked();
   await user.click(screen.getByRole('button', { name: 'Simpan perubahan' }));
-  await screen.findByText('Cabang tersimpan.');
+  await screen.findByText('Unit tersimpan.');
   expect(writes).toEqual([{
     name: branch.name, deleted: [],
     divisions: [{ id: division.id, name: division.name, kinerja_enabled: true, pelimpahan_enabled: false }],
     expected: { name: branch.name, divisions: { [division.id]: division.name }, settings: { [division.id]: { kinerja_enabled: false, pelimpahan_enabled: true } } },
   }]);
-  await user.click(screen.getByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(screen.getByRole('button', { name: 'Edit unit Synthetic Branch' }));
   expect(screen.getByRole('switch', { name: 'Kinerja' })).toBeChecked();
   expect(screen.getByRole('switch', { name: 'Pelimpahan' })).not.toBeChecked();
 });
@@ -60,7 +60,7 @@ test('HR edits independent Divisi switches and includes reviewed settings in the
 test('switch-only edits participate in dirty Cancel and restoring values avoids a write', async () => {
   const { user, writes } = setup();
   const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-  await user.click(await screen.findByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(await screen.findByRole('button', { name: 'Edit unit Synthetic Branch' }));
   const kinerja = screen.getByRole('switch', { name: 'Kinerja' });
   kinerja.focus(); await user.keyboard(' ');
   expect(kinerja).toBeChecked();
@@ -74,27 +74,45 @@ test('switch-only edits participate in dirty Cancel and restoring values avoids 
   await user.click(screen.getByRole('button', { name: 'Batal' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(writes).toHaveLength(0);
-  await user.click(screen.getByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(screen.getByRole('button', { name: 'Edit unit Synthetic Branch' }));
   expect(screen.getByRole('switch', { name: 'Kinerja' })).not.toBeChecked();
   expect(screen.getByRole('switch', { name: 'Pelimpahan' })).toBeChecked();
 });
 
 test('a committed save with a lost response is confirmed by reads without replaying writes', async () => {
   const { user, writes } = setup(true);
-  await user.click(await screen.findByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(await screen.findByRole('button', { name: 'Edit unit Synthetic Branch' }));
   await user.click(screen.getByRole('switch', { name: 'Kinerja' }));
   await user.click(screen.getByRole('button', { name: 'Simpan perubahan' }));
   await screen.findByRole('button', { name: 'Periksa data tersimpan' });
   expect(screen.getByRole('button', { name: 'Simpan perubahan' })).toBeDisabled();
   expect(screen.getByRole('switch', { name: 'Kinerja' })).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Periksa data tersimpan' }));
-  await screen.findByText('Cabang tersimpan.');
+  await screen.findByText('Unit tersimpan.');
   expect(writes).toHaveLength(1);
+});
+
+test('Divisi rows show sequential numbers after adding, removing and restoring rows', async () => {
+  const { user, writes } = setup();
+  await user.click(await screen.findByRole('button', { name: 'Edit unit Synthetic Branch' }));
+  const numbers = () => [...screen.getByRole('dialog').querySelectorAll('.branch-division-number')].map(item => item.textContent);
+  expect(numbers()).toEqual(['1.']);
+  await user.click(screen.getByRole('button', { name: 'Tambah divisi' }));
+  expect(numbers()).toEqual(['1.', '2.']);
+  await user.click(screen.getByRole('button', { name: 'Hapus divisi Synthetic Division' }));
+  await user.click(await screen.findByRole('button', { name: 'Hapus divisi' }));
+  expect(numbers()).toEqual(['1.']);
+  await user.click(screen.getByRole('button', { name: 'Batalkan' }));
+  expect(numbers()).toEqual(['1.', '2.']);
+  await user.click(screen.getByRole('button', { name: 'Hapus divisi 1' }));
+  expect(numbers()).toEqual(['1.']);
+  expect(screen.getByLabelText('Nama divisi 1')).toHaveValue(division.name);
+  expect(writes).toHaveLength(0);
 });
 
 test('new Divisi switches default off and are included in the combined save', async () => {
   const { user, writes } = setup();
-  await user.click(await screen.findByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(await screen.findByRole('button', { name: 'Edit unit Synthetic Branch' }));
   await user.click(screen.getByRole('button', { name: 'Tambah divisi' }));
   const group = within(screen.getByRole('group', { name: 'Pengaturan divisi 2' }));
   expect(group.getByRole('switch', { name: 'Kinerja' })).not.toBeChecked();
@@ -111,7 +129,7 @@ test('new Divisi switches default off and are included in the combined save', as
 
 test('undoing staged deletion preserves the Divisi draft switches', async () => {
   const { user, writes } = setup();
-  await user.click(await screen.findByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(await screen.findByRole('button', { name: 'Edit unit Synthetic Branch' }));
   await user.click(screen.getByRole('switch', { name: 'Kinerja' }));
   await user.click(screen.getByRole('button', { name: 'Hapus divisi Synthetic Division' }));
   await user.click(await screen.findByRole('button', { name: 'Hapus divisi' }));
@@ -123,7 +141,7 @@ test('undoing staged deletion preserves the Divisi draft switches', async () => 
 
 test('read-back cannot confirm an uncertain save when names match but settings do not', async () => {
   const { user, writes } = setup(true, false);
-  await user.click(await screen.findByRole('button', { name: 'Edit cabang Synthetic Branch' }));
+  await user.click(await screen.findByRole('button', { name: 'Edit unit Synthetic Branch' }));
   await user.click(screen.getByRole('switch', { name: 'Kinerja' }));
   await user.click(screen.getByRole('button', { name: 'Simpan perubahan' }));
   await user.click(await screen.findByRole('button', { name: 'Periksa data tersimpan' }));

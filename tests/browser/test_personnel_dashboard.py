@@ -28,7 +28,7 @@ def test_dashboard_dialog_and_populated_division_deletion(
     branch_id, division_id, employee_id = db_call(prepare)
     login(page)
     modules = page.get_by_role("navigation", name="Modul", exact=True)
-    modules.get_by_role("link", name="Personnel", exact=True).click()
+    modules.get_by_role("link", name="Ringkasan", exact=True).click()
     expect(page.get_by_role("heading", name="Personnel", exact=True)).to_be_visible()
     expect(page.get_by_role("navigation", name="Breadcrumb")).to_have_count(0)
     expect(
@@ -40,7 +40,7 @@ def test_dashboard_dialog_and_populated_division_deletion(
         .locator("strong")
     ).to_have_text("1")
     expect(page.get_by_role("table").get_by_role("link", name="Pegawai Contoh Own")).to_be_visible()
-    modules.get_by_role("link", name="Cabang & Divisi", exact=True).click()
+    modules.get_by_role("link", name="Unit & Divisi", exact=True).click()
     branch_row = page.locator(".organization-branch")
     division_row = page.locator(".organization-division")
     assert branch_row.bounding_box()["height"] < 72
@@ -61,10 +61,10 @@ def test_dashboard_dialog_and_populated_division_deletion(
         >= 1
     )
     page.locator(".organization-toggle").click()
-    edit = page.get_by_role("button", name="Edit cabang Synthetic Branch", exact=True)
+    edit = page.get_by_role("button", name="Edit unit Synthetic Branch", exact=True)
     edit.click()
-    dialog = page.get_by_role("dialog", name="Edit cabang", exact=True)
-    expect(dialog.get_by_label("Nama cabang", exact=True)).to_be_focused()
+    dialog = page.get_by_role("dialog", name="Edit unit", exact=True)
+    expect(dialog.get_by_label("Nama unit", exact=True)).to_be_focused()
     captures = Path(".local/personnel-acceptance")
     captures.mkdir(parents=True, exist_ok=True)
     for width in (1440, 390):
@@ -75,7 +75,7 @@ def test_dashboard_dialog_and_populated_division_deletion(
     dialog.get_by_role("button", name="Hapus divisi Synthetic Division", exact=True).click()
     expect(
         page.get_by_text(
-            "1 karyawan akan tetap di cabang masing-masing, dengan Divisi dikosongkan. "
+            "1 karyawan akan tetap di unit masing-masing, dengan Divisi dikosongkan. "
             "Data karyawan tidak dihapus.",
             exact=True,
         )
@@ -113,7 +113,7 @@ def test_dashboard_dialog_and_populated_division_deletion(
     )
     logout(page)
     login(page, role="manager")
-    modules.get_by_role("link", name="Personnel", exact=True).click()
+    modules.get_by_role("link", name="Ringkasan", exact=True).click()
     expect(page.locator(".personnel-metric")).to_have_count(1)
     expect(page.locator(".personnel-metric strong")).to_have_text("2")
     expect(page.get_by_role("table")).to_have_count(0)

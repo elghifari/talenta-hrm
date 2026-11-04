@@ -23,7 +23,11 @@ def test_identity_capabilities_match_employee_permissions(django_user_model, rol
     client = Client()
     client.force_login(user)
     identity = client.get("/api/auth/me/").json()
-    assert identity["capabilities"] == {"employees_read": read, "employees_write": write}
+    assert identity["capabilities"] == {
+        "employees_read": read,
+        "employees_write": write,
+        "audit_read": False,
+    }
     assert client.get("/api/employees/").status_code == (200 if read else 403)
     response = client.post(
         "/api/employees/",
@@ -43,6 +47,7 @@ def test_superuser_has_no_implicit_employee_capabilities(django_user_model):
     assert client.get("/api/auth/me/").json()["capabilities"] == {
         "employees_read": False,
         "employees_write": False,
+        "audit_read": False,
     }
     assert client.get("/api/employees/").status_code == 403
 

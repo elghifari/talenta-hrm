@@ -27,10 +27,10 @@ def test_divisi_switches_persist_audit_and_deny_manager_writes(
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     login(page)
-    page.get_by_role("link", name="Cabang & Divisi", exact=True).click()
-    edit = page.get_by_role("button", name="Edit cabang Synthetic Settings Branch", exact=True)
+    page.get_by_role("link", name="Unit & Divisi", exact=True).click()
+    edit = page.get_by_role("button", name="Edit unit Synthetic Settings Branch", exact=True)
     edit.click()
-    dialog = page.get_by_role("dialog", name="Edit cabang", exact=True)
+    dialog = page.get_by_role("dialog", name="Edit unit", exact=True)
     first = dialog.get_by_role("group", name="Pengaturan divisi Synthetic First", exact=True)
     kinerja = first.get_by_role("switch", name="Kinerja", exact=True)
     pelimpahan = first.get_by_role("switch", name="Pelimpahan", exact=True)
@@ -59,6 +59,12 @@ def test_divisi_switches_persist_audit_and_deny_manager_writes(
     measurements = []
     for width in (390, 768, 1440):
         page.set_viewport_size({"width": width, "height": 850})
+        assert (
+            dialog.locator(".branch-dialog-divisions").evaluate(
+                "element => parseFloat(getComputedStyle(element).borderTopWidth)"
+            )
+            == 3
+        )
         assert dialog.bounding_box()["width"] <= width
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
         measurement = first.locator(".division-settings").evaluate(
@@ -146,7 +152,7 @@ def test_divisi_switches_persist_audit_and_deny_manager_writes(
     before = db_call(lambda: AuditEvent.objects.count())
     logout(page)
     login(page, role="manager")
-    expect(page.get_by_role("link", name="Cabang & Divisi", exact=True)).to_have_count(0)
+    expect(page.get_by_role("link", name="Unit & Divisi", exact=True)).to_have_count(0)
     csrf = page.request.get(live_server.url + "/api/auth/csrf/").json()["csrfToken"]
     rejected = page.request.patch(
         live_server.url + f"/api/organization/branches/{branch_id}/structure/",
@@ -163,15 +169,56 @@ def test_divisi_switches_persist_audit_and_deny_manager_writes(
     assert not errors, errors
 
 
+def test_divisi_rows_are_compact_and_numbered_through_a_long_list(page, login, db_call):
+    def prepare():
+        branch = Branch.objects.create(name="Synthetic Compact Branch")
+        Division.objects.bulk_create(
+            [
+                Division(name=f"Synthetic Division {index:02}", branch=branch)
+                for index in range(1, 13)
+            ]
+        )
+
+    db_call(prepare)
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    login(page)
+    page.get_by_role("link", name="Unit & Divisi", exact=True).click()
+    page.get_by_role("button", name="Edit unit Synthetic Compact Branch", exact=True).click()
+    dialog = page.get_by_role("dialog", name="Edit unit", exact=True)
+    rows = dialog.locator(".branch-division")
+    captures = Path(".local/divisi-settings-acceptance")
+    captures.mkdir(parents=True, exist_ok=True)
+    for width in (390, 768, 1440):
+        page.set_viewport_size({"width": width, "height": 850})
+        expect(dialog.locator(".branch-division-number")).to_have_text(
+            [f"{index}." for index in range(1, 13)]
+        )
+        pitch = rows.nth(1).bounding_box()["y"] - rows.first.bounding_box()["y"]
+        assert pitch <= 102, pitch
+        switch = rows.first.get_by_role("switch", name="Kinerja", exact=True)
+        assert switch.bounding_box()["width"] <= 32
+        assert switch.bounding_box()["height"] <= 20
+        assert rows.first.locator(".division-settings label").first.bounding_box()["height"] >= 44
+        assert dialog.locator(".branch-dialog-body").evaluate(
+            "element => element.scrollWidth <= element.clientWidth"
+        )
+        rows.last.get_by_label("Nama divisi 12", exact=True).scroll_into_view_if_needed()
+        expect(rows.last.locator(".branch-division-number")).to_be_in_viewport()
+        rows.first.scroll_into_view_if_needed()
+        page.screenshot(path=str(captures / f"compact-{width}.png"), full_page=True)
+    assert not errors, errors
+
+
 def test_divisi_settings_lost_response_recovers_without_replaying_write(
     page, login, db_call, synthetic_data
 ):
     branch_id, first_id, _ = db_call(lambda: prepare_divisions(synthetic_data))
     login(page)
-    page.get_by_role("link", name="Cabang & Divisi", exact=True).click()
-    edit = page.get_by_role("button", name="Edit cabang Synthetic Settings Branch", exact=True)
+    page.get_by_role("link", name="Unit & Divisi", exact=True).click()
+    edit = page.get_by_role("button", name="Edit unit Synthetic Settings Branch", exact=True)
     edit.click()
-    dialog = page.get_by_role("dialog", name="Edit cabang", exact=True)
+    dialog = page.get_by_role("dialog", name="Edit unit", exact=True)
     first = dialog.get_by_role("group", name="Pengaturan divisi Synthetic First", exact=True)
     first.get_by_role("switch", name="Kinerja", exact=True).check()
     writes = []

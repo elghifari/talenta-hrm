@@ -13,7 +13,7 @@ from .serializers import EmployeeSerializer
 COLUMNS = {
     "ID Karyawan": "employee_code",
     "Nama Lengkap": "full_name",
-    "Cabang": "branch",
+    "Unit": "branch",
     "Divisi": "division",
     "Tanggal Lahir": "date_of_birth",
     "Jabatan": "job_title",
@@ -52,6 +52,7 @@ def resolve_hierarchy(data, employee, branches, divisions):
         "division_name": employee.division.name if employee and employee.division else None,
     }
     errors = {}
+    missing = []
     if "branch" in data:
         name = data.pop("branch")
         if name not in branches:
@@ -65,12 +66,14 @@ def resolve_hierarchy(data, employee, branches, divisions):
         if branch:
             data["branch"] = str(branch.pk)
         else:
-            errors["branch"] = ["Cabang belum terdaftar. Periksa nama cabang."]
+            errors["branch"] = ["Unit belum terdaftar. Periksa nama unit."]
+            missing.append({"kind": "branch", "name": name, "branch_name": name})
     if "division" in data:
         name = data.pop("division")
         names["division_name"] = name
         if branch is None:
-            errors["division"] = ["Isi Cabang yang terdaftar untuk memilih Divisi."]
+            errors["division"] = ["Isi Unit yang terdaftar untuk memilih Divisi."]
+            missing.append({"kind": "division", "name": name, "branch_name": names["branch_name"]})
         else:
             key = (branch.pk, name)
             if key not in divisions:
@@ -84,13 +87,14 @@ def resolve_hierarchy(data, employee, branches, divisions):
                 data["division"] = str(division.pk)
                 names["division_name"] = division.name
             else:
-                errors["division"] = ["Divisi belum terdaftar di cabang ini. Periksa nama divisi."]
-    return names, errors
+                errors["division"] = ["Divisi belum terdaftar di unit ini. Periksa nama divisi."]
+                missing.append({"kind": "division", "name": name, "branch_name": branch.name})
+    return names, errors, missing
 
 
 def normalize_header(value):
     name = " ".join(value.strip().lower().split())
-    return "tanggal lahir" if name == "ttl" else name
+    return {"ttl": "tanggal lahir", "cabang": "unit"}.get(name, name)
 
 
 def parse_rows(upload, request):
@@ -168,7 +172,7 @@ def parse_rows(upload, request):
                     label.casefold(): code for code, label in Employee._meta.get_field(key).choices
                 }
                 data[key] = labels.get(data[key].casefold(), data[key])
-        names, hierarchy_errors = resolve_hierarchy(data, employee, branches, divisions)
+        names, hierarchy_errors, missing = resolve_hierarchy(data, employee, branches, divisions)
         serializer = EmployeeSerializer(
             employee, data=data, partial=employee is not None, context={"request": request}
         )
@@ -216,6 +220,7 @@ def parse_rows(upload, request):
                 "incoming": incoming,
                 "changes": changes,
                 "errors": errors,
+                "missing_hierarchy": missing,
             }
         )
     return rows

@@ -75,7 +75,7 @@ class BranchViewSet(ReferenceViewSet):
         data = request.data
         expected = {"name": branch.name, "divisions": {str(item.pk): item.name for item in current}}
         if not isinstance(data, dict) or set(data) != {"name", "divisions", "expected", "deleted"}:
-            raise ValidationError({"name": ["Data cabang tidak valid."]})
+            raise ValidationError({"name": ["Data unit tidak valid."]})
         if isinstance(data["expected"], dict) and "settings" in data["expected"]:
             expected["settings"] = {
                 str(item.pk): {key: getattr(item, key) for key in DIVISION_SETTINGS}
@@ -88,7 +88,7 @@ class BranchViewSet(ReferenceViewSet):
         field = serializers.CharField(max_length=150, allow_blank=False)
         name = " ".join(field.run_validation(data["name"]).split())
         if not name or Branch.objects.exclude(pk=branch.pk).filter(name__iexact=name).exists():
-            raise ValidationError({"name": ["Nama cabang kosong atau sudah digunakan."]})
+            raise ValidationError({"name": ["Nama unit kosong atau sudah digunakan."]})
         rows = data["divisions"]
         if not isinstance(rows, list) or len(rows) > 500:
             raise ValidationError({"name": ["Daftar divisi tidak valid (maksimal 500)."]})
@@ -125,7 +125,7 @@ class BranchViewSet(ReferenceViewSet):
                 or identifier in seen
                 or identifier in removals
             ):
-                raise ValidationError({"name": ["Divisi tidak valid untuk cabang ini."]})
+                raise ValidationError({"name": ["Divisi tidak valid untuk unit ini."]})
             value = " ".join(field.run_validation(row.get("name")).split())
             if not value or value.lower() in names:
                 raise ValidationError({"name": ["Nama divisi kosong atau duplikat."]})

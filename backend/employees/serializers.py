@@ -55,7 +55,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         branch = attrs.get("branch", getattr(self.instance, "branch", None))
         division = attrs.get("division", getattr(self.instance, "division", None))
         if division and (branch is None or division.branch_id != branch.pk):
-            errors["division"] = "Pilih divisi yang dimiliki cabang ini, atau kosongkan divisi."
+            errors["division"] = "Pilih divisi yang dimiliki unit ini, atau kosongkan divisi."
         status = attrs.get("employment_status", getattr(self.instance, "employment_status", ""))
         if "employment_status" in attrs and status != "kontrak" and "pkwt_type" not in attrs:
             attrs["pkwt_type"] = ""

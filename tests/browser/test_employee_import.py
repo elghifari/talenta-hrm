@@ -27,7 +27,7 @@ def open_preview(page, login):
     with page.expect_response(
         lambda response: "/api/employees/import-preview/" in response.url
     ) as pending:
-        page.get_by_role("button", name="Pratinjau CSV", exact=True).click()
+        page.get_by_role("button", name="Preview CSV", exact=True).click()
     response = pending.value
     assert response.status == 201, response.text()
     expect(page.get_by_role("button", name="Konfirmasi upload", exact=True)).to_be_enabled()
@@ -77,7 +77,7 @@ def test_mixed_csv_review_persistence_and_responsive_layout(page, login, db_call
     page.get_by_label("File CSV", exact=True).set_input_files(
         {"name": "karyawan.csv", "mimeType": "text/csv", "buffer": CSV.encode()}
     )
-    page.get_by_role("button", name="Pratinjau CSV", exact=True).click()
+    page.get_by_role("button", name="Preview CSV", exact=True).click()
     expect(page.locator(".import-marker")).to_have_text(["-", "-", "-"])
     page.get_by_role("button", name="Konfirmasi upload", exact=True).click()
     expect(page.get_by_text("Data pegawai berhasil diimpor.", exact=True)).to_be_visible()

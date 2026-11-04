@@ -28,13 +28,13 @@ function setup() {
   return { user: userEvent.setup(), writes };
 }
 
-test('changing Cabang resets Divisi and offers only divisions owned by the selected Cabang', async () => {
+test('changing Unit resets Divisi and offers only divisions owned by the selected Unit', async () => {
   const { user, writes } = setup();
   await screen.findByRole('heading', { name: 'Ubah data pegawai' });
   const division = screen.getByRole('combobox', { name: 'Divisi' });
   await waitFor(() => expect(division).toBeEnabled());
   expect(within(division).getAllByRole('option').map(option => (option as HTMLOptionElement).value)).toEqual(['', divisions[0].id, divisions[2].id]);
-  await user.selectOptions(screen.getByRole('combobox', { name: 'Cabang' }), branches[1].id);
+  await user.selectOptions(screen.getByRole('combobox', { name: 'Unit' }), branches[1].id);
   expect(division).toHaveValue('');
   expect(within(division).getAllByRole('option').map(option => (option as HTMLOptionElement).value)).toEqual(['', divisions[1].id]);
   await user.selectOptions(division, divisions[1].id);
@@ -43,10 +43,10 @@ test('changing Cabang resets Divisi and offers only divisions owned by the selec
   expect(writes).toEqual([{ branch: branches[1].id, division: divisions[1].id }]);
 });
 
-test('clearing Cabang also clears Divisi in the same employee update', async () => {
+test('clearing Unit also clears Divisi in the same employee update', async () => {
   const { user, writes } = setup();
   await screen.findByRole('heading', { name: 'Ubah data pegawai' });
-  const branch = screen.getByRole('combobox', { name: 'Cabang' });
+  const branch = screen.getByRole('combobox', { name: 'Unit' });
   await waitFor(() => expect(branch).toBeEnabled());
   await user.selectOptions(branch, '');
   expect(screen.getByRole('combobox', { name: 'Divisi' })).toBeDisabled();
