@@ -8,6 +8,29 @@ from playwright.sync_api import expect
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
+@pytest.fixture
+def sidebar_events(page):
+    page.add_init_script("""(() => {
+      window.sidebarEvents = [];
+      let shell;
+      const record = event => {
+        shell ??= document.querySelector('.app-shell');
+        window.sidebarEvents.push({event: event.type, key: event.key,
+          target: event.target?.tagName, width: innerWidth, path: location.pathname,
+          mobile: matchMedia('(max-width: 680px)').matches,
+          originalShellConnected: shell?.isConnected,
+          sidebar: document.querySelector('.sidebar')?.className,
+          flyout: Boolean(document.querySelector('#personnel-flyout'))});
+        if (window.sidebarEvents.length > 80) window.sidebarEvents.shift();
+      };
+      for (const name of ['resize', 'pointerdown', 'keydown', 'keyup', 'focus']) {
+        window.addEventListener(name, record, true);
+      }
+    })()""")
+    yield
+    print("Sidebar event history:", json.dumps(page.evaluate("window.sidebarEvents")))
+
+
 def verify_sidebar_contrast(page, captures, label):
     pairs = page.evaluate("""() => {
       const rgb = value => value.match(/[\\d.]+/g).slice(0, 3).map(Number);
@@ -51,6 +74,9 @@ def test_sidebar_stays_in_view_while_the_employee_page_scrolls(page, login, db_c
         )
     )
     login(page, role="hr_manager")
+    expect(
+        page.get_by_role("link", name="Synthetic sidebar employee 0", exact=True)
+    ).to_be_visible()
     sidebar = page.locator(".sidebar")
     before = sidebar.bounding_box()
     page.evaluate("window.scrollTo(0, 600)")
@@ -65,7 +91,7 @@ def test_sidebar_stays_in_view_while_the_employee_page_scrolls(page, login, db_c
     expect(sidebar.get_by_role("link", name="Log aktivitas", exact=True)).to_be_in_viewport()
 
 
-def test_sidebar_dropdown_rail_and_mobile_keyboard_navigation(page, login):
+def test_sidebar_dropdown_rail_and_mobile_keyboard_navigation(page, login, sidebar_events):
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     login(page, role="hr_manager")
@@ -96,12 +122,14 @@ def test_sidebar_dropdown_rail_and_mobile_keyboard_navigation(page, login):
     expect(flyout.get_by_role("link", name="Ringkasan", exact=True)).to_be_focused()
     for width in (1440, 768):
         page.set_viewport_size({"width": width, "height": 900})
+        expect(flyout, f"Flyout after resize to {width}px").to_be_visible()
         bounds = flyout.bounding_box()
         assert bounds["x"] >= page.locator(".sidebar").bounding_box()["width"]
         assert bounds["x"] + bounds["width"] <= width
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
         verify_sidebar_contrast(page, captures, f"compact-{width}")
         page.screenshot(path=str(captures / f"compact-{width}.png"), full_page=True)
+        expect(flyout, f"Flyout after screenshot at {width}px").to_be_visible()
     page.keyboard.press("Escape")
     expect(flyout).to_have_count(0)
     expect(group).to_be_focused()
