@@ -97,10 +97,12 @@ Create the account once, entering its password through the terminal prompt:
 from getpass import getpass
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.management import call_command
 
 user = get_user_model().objects.create_user(email="synthetic-hr@example.test")
 user.set_password(getpass("Synthetic local password: "))
 user.save(update_fields=["password"])
+call_command("bootstrap_roles")
 user.groups.add(Group.objects.get(name="HR"))
 ```
 
