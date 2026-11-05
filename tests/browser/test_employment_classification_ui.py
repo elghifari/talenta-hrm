@@ -44,7 +44,9 @@ def test_classification_create_edit_clear_and_restricted_detail(
     page.get_by_role("button", name="Simpan pegawai", exact=True).click()
     expect(page.get_by_role("heading", name="Pegawai Klasifikasi", exact=True)).to_be_visible()
     page.reload()
-    expect(page.get_by_text("Kontrak", exact=True)).to_be_visible()
+    expect(
+        page.get_by_role("region", name="Masa kerja").get_by_text("Kontrak", exact=True)
+    ).to_be_visible()
     expect(page.get_by_text("Guru", exact=True)).to_be_visible()
     assert classification(db_call, "0099") == ("kontrak", "guru")
     created = db_call(lambda: Employee.objects.get(employee_code="0099"))

@@ -1,0 +1,36 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, expect, test, vi } from 'vitest';
+import { App } from '../app/App';
+const employee = '10000000-0000-0000-0000-000000000001', id = '20000000-0000-0000-0000-000000000001', hash = 'a'.repeat(64);
+afterEach(() => vi.unstubAllGlobals());
+test('saved manual address survives Unit selection cancellation and changes only on confirmation', async () => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function(this: HTMLDialogElement) { this.setAttribute('open', ''); } });
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function(this: HTMLDialogElement) { this.removeAttribute('open'); } });
+  const draft = { id, employee, pkwt_type: 'yayasan', revision: 1, reference_version: 'v1', template_sha256: hash, values: { alamat_unit: 'Reviewed manual address' }, employee_snapshot: {}, source_unit: 'Unit A', job_default_key: null, created_at: '2026-11-05', updated_at: '2026-11-05' };
+  const fields = [{ key: 'alamat_unit', label: 'Alamat Unit', group: 'Penempatan', kind: 'text', choices: [], max_length: 1000, required_for_generation: true }];
+  const refs = { available: true, version: 'v1', templates: Object.fromEntries(['yayasan', 'guru', 'klinik_umum'].map(k => [k, { sha256: hash }])), units: [{ key: 'Unit A', unit: 'Unit A', alamat_unit: 'Default address A' }, { key: 'Unit B', unit: 'Unit B', alamat_unit: 'Default address B' }], jobs: [], fields: { yayasan: fields, guru: [], klinik_umum: [] } };
+  const fetcher = vi.fn(async (path: string, init?: RequestInit) => {
+    if (init?.method && init.method !== 'GET') throw new Error('Unexpected write');
+    if (path.endsWith('/me/')) return Response.json({ id: 1, email: 'hr@example.test', capabilities: { employees_read: true, employees_write: true } });
+    if (path === `/api/employees/${employee}/`) return Response.json({ id: employee, employee_code: '00042', full_name: 'Employee', employment_status: 'kontrak', pkwt_type: 'yayasan' });
+    if (path.startsWith('/api/contract-references/')) return Response.json(refs);
+    if (path === `/api/contract-drafts/${id}/`) return Response.json(draft);
+    if (path.endsWith('/documents/')) return Response.json({ results: [] });
+    throw new Error('Unexpected request ' + path);
+  });
+  vi.stubGlobal('fetch', fetcher);
+  const user = userEvent.setup();
+  render(<App initialEntries={[`/employees/${employee}/contracts/${id}`]} />);
+  expect(await screen.findByLabelText('Alamat Unit')).toHaveValue('Reviewed manual address');
+  expect(screen.getByRole('button', { name: 'Simpan draf' })).toBeDisabled();
+  await user.selectOptions(screen.getByLabelText('Unit sumber'), 'Unit B');
+  await screen.findByRole('dialog');
+  expect(screen.getByLabelText('Alamat Unit')).toHaveValue('Reviewed manual address');
+  await user.click(screen.getByRole('button', { name: 'Batal' }));
+  expect(screen.getByLabelText('Unit sumber')).toHaveValue('Unit A');
+  await user.selectOptions(screen.getByLabelText('Unit sumber'), 'Unit B');
+  await user.click(screen.getByRole('button', { name: 'Gunakan default' }));
+  expect(screen.getByLabelText('Alamat Unit')).toHaveValue('Default address B');
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method === 'POST' || init?.method === 'PATCH')).toHaveLength(0);
+});

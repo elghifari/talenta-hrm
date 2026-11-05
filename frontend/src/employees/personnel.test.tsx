@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test, vi } from 'vitest';
 import { App } from '../app/App';
@@ -33,7 +33,7 @@ test('Personnel shows complete totals and inclusive 30-day expiries without a ro
   expect(await screen.findByRole('link', { name: /Divisi\s*1/ })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /Kontrak segera berakhir\s*2/ })).toHaveAttribute('href', '#contract-expiries');
   const table = screen.getByRole('table');
-  expect(within(table).getAllByRole('link').map(link => link.textContent)).toEqual(['Synthetic 1', 'Synthetic 2']);
+  expect(Array.from(table.querySelectorAll('tbody td:first-child a')).map(link => link.textContent)).toEqual(['Synthetic 1', 'Synthetic 2']);
   expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument();
 });
 

@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "organization",
     "compensation",
     "audit",
+    "contracts",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -49,6 +50,11 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+CONTRACT_REFERENCE_ROOT = Path(
+    os.environ.get(
+        "CONTRACT_REFERENCE_ROOT", str(BASE_DIR.parent / ".local" / "contracts" / "references")
+    )
+)
 AUTH_USER_MODEL = "accounts.User"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],

@@ -11,6 +11,7 @@ import { GroupManagementPage } from '../employees/OrganizationPage';
 import { AppShell } from './AppShell';
 import { ActivityLogPage } from '../audit/ActivityLogPage';
 import { PersonnelPage } from '../employees/PersonnelPage';
+import { ContractEditorPage } from '../contracts/ContractEditorPage';
 function Gate() {
   const session = useSession();
   if (session.status === 'checking') return <main className="session-state" role="status">Memeriksa sesi…</main>;
@@ -29,6 +30,8 @@ export function makeRouter(initialEntries?: string[]) {
     { path: '/employees/import', element: <ImportUploadPage /> },
     { path: '/employees/groups', element: <GroupManagementPage /> },
     { path: '/employees/imports/:batchId', element: <ImportPreviewPage /> },
+    { path: '/employees/:employeeId/contracts/new', element: <ContractEditorPage /> },
+    { path: '/employees/:employeeId/contracts/:draftId', element: <ContractEditorPage /> },
     { path: '/employees/:id/edit', element: <EmployeeEditPage /> },
     { path: '/employees/:id', element: <EmployeeDetailPage /> },
     { path: '*', element: <><h1>Halaman tidak ditemukan</h1><a href="/employees">Kembali ke data pegawai</a></> },

@@ -10,6 +10,9 @@ ACTIONS = {
     "division.updated": "Divisi diubah",
     "division.deleted": "Divisi dihapus",
     "division.settings_changed": "Pengaturan divisi diubah",
+    "contract.draft_created": "Draf PKWT dibuat",
+    "contract.draft_updated": "Draf PKWT diubah",
+    "contract.document_generated": "Dokumen PKWT dibuat",
 }
 TARGETS = {
     "employee": (Employee, "full_name"),

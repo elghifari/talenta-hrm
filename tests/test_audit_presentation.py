@@ -92,7 +92,12 @@ def test_known_unknown_and_historical_targets_are_batched(
     employee = Employee.objects.create(employee_code="0099", full_name="<script>literal</script>")
     branch = Branch.objects.create(name="Synthetic Branch")
     division = Division.objects.create(name="Synthetic Division", branch=branch)
-    targets = {"employee": employee.pk, "branch": branch.pk, "division": division.pk}
+    targets = {
+        "employee": employee.pk,
+        "branch": branch.pk,
+        "division": division.pk,
+        "contract": uuid4(),
+    }
     for action in ACTIONS:
         AuditEvent.objects.create(
             actor=audit_manager,
@@ -123,4 +128,4 @@ def test_known_unknown_and_historical_targets_are_batched(
     assert all(row["actor"]["email"] == audit_manager.email for row in projected)
     repeated = events * 5
     with django_assert_num_queries(3):
-        assert len(present_events(repeated)) == 45
+        assert len(present_events(repeated)) == (len(ACTIONS) + 1) * 5

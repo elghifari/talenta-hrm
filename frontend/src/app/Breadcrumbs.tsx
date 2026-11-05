@@ -14,6 +14,7 @@ export function Breadcrumbs() {
     else if (pathname === '/employees/import') crumbs.push({ label: 'Batch Upload' });
     else if (pathname.startsWith('/employees/imports/')) crumbs.push({ label: 'Batch Upload', to: '/employees/import' }, { label: 'Preview CSV' });
     else if (/^\/employees\/[^/]+\/edit$/.test(pathname)) crumbs.push({ label: 'Detail pegawai', to: pathname.replace(/\/edit$/, '') }, { label: 'Ubah data pegawai' });
+    else if (/^\/employees\/[^/]+\/contracts\/[^/]+$/.test(pathname)) crumbs.push({ label: 'Detail pegawai', to: pathname.split('/contracts/')[0] }, { label: pathname.endsWith('/new') ? 'Buat draf perpanjangan' : 'Draf perpanjangan PKWT' });
     else if (/^\/employees\/[^/]+$/.test(pathname)) crumbs.push({ label: 'Detail pegawai' });
     else if (pathname !== '/employees') crumbs.push({ label: 'Halaman tidak ditemukan' });
   }

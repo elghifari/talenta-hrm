@@ -1,0 +1,162 @@
+[
+  {
+    "input": {
+      "hari_kerja_jml": "6",
+      "hari_kerja_rentang": "Senin - Sabtu",
+      "jam_sen_jum": "08.00-16.00",
+      "jam_sabtu_jam": "08.00-13.00",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "45 (empat puluh lima) jam",
+      "hari_kerja": "6 (enam) hari yaitu : Senin, Selasa, Rabu, Kamis, Jumat, Sabtu",
+      "jam_hari": "8 (delapan) jam",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "jam_sabtu": "Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol)",
+      "jam_gabungan": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol). Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  },
+  {
+    "input": {
+      "hari_kerja_jml": "6",
+      "hari_kerja_rentang": "Senin - Sabtu",
+      "jam_sen_jum": "08.00-16.00",
+      "jam_sabtu_jam": "",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "48 (empat puluh delapan) jam",
+      "hari_kerja": "6 (enam) hari yaitu : Senin, Selasa, Rabu, Kamis, Jumat, Sabtu",
+      "jam_hari": "8 (delapan) jam",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "jam_sabtu": "Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol)",
+      "jam_gabungan": "Hari Senin sampai dengan hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  },
+  {
+    "input": {
+      "hari_kerja_jml": "5",
+      "hari_kerja_rentang": "Senin - Jumat",
+      "jam_sen_jum": "08.00-16.00",
+      "jam_sabtu_jam": "",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "40 (empat puluh) jam",
+      "hari_kerja": "5 (lima) hari yaitu : Senin, Selasa, Rabu, Kamis, Jumat",
+      "jam_hari": "8 (delapan) jam",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "jam_sabtu": "Hari Sabtu merupakan hari libur kerja",
+      "jam_gabungan": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol). Hari Sabtu merupakan hari libur kerja.",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  },
+  {
+    "input": {
+      "hari_kerja_jml": "6",
+      "hari_kerja_rentang": "Senin - Minggu",
+      "jam_sen_jum": "08.00-16.00",
+      "jam_sabtu_jam": "",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "48 (empat puluh delapan) jam",
+      "hari_kerja": "6 (enam) hari kerja dalam rentang hari Senin sampai dengan hari Minggu, sesuai jadwal kerja yang ditetapkan Perusahaan",
+      "jam_hari": "8 (delapan) jam",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "jam_sabtu": "Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol)",
+      "jam_gabungan": "Hari Senin sampai dengan hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  },
+  {
+    "input": {
+      "hari_kerja_jml": "6",
+      "hari_kerja_rentang": "Senin - Sabtu",
+      "jam_sen_jum": "22.30-06.00",
+      "jam_sabtu_jam": "",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "45 (empat puluh lima) jam",
+      "hari_kerja": "6 (enam) hari yaitu : Senin, Selasa, Rabu, Kamis, Jumat, Sabtu",
+      "jam_hari": "7 (tujuh) jam 30 (tiga puluh) menit",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 22.30 (dua puluh dua titik tiga puluh) sampai dengan pukul 06.00 (enam titik nol nol).",
+      "jam_sabtu": "Hari Sabtu berlangsung mulai pukul 22.30 (dua puluh dua titik tiga puluh) sampai dengan pukul 06.00 (enam titik nol nol)",
+      "jam_gabungan": "Hari Senin sampai dengan hari Sabtu berlangsung mulai pukul 22.30 (dua puluh dua titik tiga puluh) sampai dengan pukul 06.00 (enam titik nol nol).",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  },
+  {
+    "input": {
+      "hari_kerja_jml": "6",
+      "hari_kerja_rentang": "Senin - Sabtu",
+      "jam_sen_jum": "8:30 sampai dengan 17:00",
+      "jam_sabtu_jam": "0830-1200",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "46 (empat puluh enam) jam",
+      "hari_kerja": "6 (enam) hari yaitu : Senin, Selasa, Rabu, Kamis, Jumat, Sabtu",
+      "jam_hari": "8 (delapan) jam 30 (tiga puluh) menit",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.30 (delapan titik tiga puluh) sampai dengan pukul 17.00 (tujuh belas titik nol nol).",
+      "jam_sabtu": "Hari Sabtu berlangsung mulai pukul 08.30 (delapan titik tiga puluh) sampai dengan pukul 12.00 (dua belas titik nol nol)",
+      "jam_gabungan": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.30 (delapan titik tiga puluh) sampai dengan pukul 17.00 (tujuh belas titik nol nol). Hari Sabtu berlangsung mulai pukul 08.30 (delapan titik tiga puluh) sampai dengan pukul 12.00 (dua belas titik nol nol).",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  },
+  {
+    "input": {
+      "hari_kerja_jml": "4",
+      "hari_kerja_rentang": "Senin - Jumat",
+      "jam_sen_jum": "08.00-16.00",
+      "jam_sabtu_jam": "08.00-13.00",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "32 (tiga puluh dua) jam",
+      "hari_kerja": "4 (empat) hari kerja dalam rentang hari Senin sampai dengan hari Jumat, sesuai jadwal kerja yang ditetapkan Perusahaan",
+      "jam_hari": "8 (delapan) jam",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "jam_sabtu": "Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol)",
+      "jam_gabungan": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol). Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  },
+  {
+    "input": {
+      "hari_kerja_jml": "7",
+      "hari_kerja_rentang": "Senin - Minggu",
+      "jam_sen_jum": "08.00-16.00",
+      "jam_sabtu_jam": "08.00-13.00",
+      "jam_ist": "12.00-13.00",
+      "jam_ist_jumat": "11.30-13.00"
+    },
+    "expected": {
+      "jam_minggu": "53 (lima puluh tiga) jam",
+      "hari_kerja": "7 (tujuh) hari yaitu : Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu",
+      "jam_hari": "8 (delapan) jam",
+      "jam_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol).",
+      "jam_sabtu": "Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol)",
+      "jam_gabungan": "Hari Senin sampai dengan hari Jumat berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 16.00 (enam belas titik nol nol). Hari Sabtu berlangsung mulai pukul 08.00 (delapan titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_senin_jumat": "Hari Senin sampai dengan hari Jumat berlangsung pukul 12.00 (dua belas titik nol nol) sampai dengan pukul 13.00 (tiga belas titik nol nol).",
+      "istirahat_jumat": "Hari Jumat pukul 11.30 (sebelas titik tiga puluh) sampai dengan pukul 13.00 (tiga belas titik nol nol)."
+    }
+  }
+]

@@ -1,13 +1,17 @@
 import os
+from pathlib import Path
 
 import dj_database_url
 
 from .base import *  # noqa: F403
+from .base import BASE_DIR
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "local-synthetic-data-only-not-for-deployment")
 DEBUG = True
 FRONTEND_DEV_ENABLED = True
-FRONTEND_DIST = BASE_DIR.parent / "frontend" / "dist"  # noqa: F405
+FRONTEND_DIST = Path(
+    os.environ.get("HRM_FRONTEND_DIST", str(BASE_DIR.parent / "frontend" / "dist"))
+)  # noqa: F405
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:5173", "http://localhost:5173"]
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
 DATABASES = {
