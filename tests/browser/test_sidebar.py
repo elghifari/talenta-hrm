@@ -128,7 +128,7 @@ def test_sidebar_dropdown_rail_and_mobile_keyboard_navigation(page, login, sideb
         assert bounds["x"] + bounds["width"] <= width
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
         verify_sidebar_contrast(page, captures, f"compact-{width}")
-        page.screenshot(path=str(captures / f"compact-{width}.png"), full_page=True)
+        page.screenshot(path=str(captures / f"compact-{width}.png"))
         expect(flyout, f"Flyout after screenshot at {width}px").to_be_visible()
     page.keyboard.press("Escape")
     expect(flyout).to_have_count(0)
