@@ -57,6 +57,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
         if division and (branch is None or division.branch_id != branch.pk):
             errors["division"] = "Pilih divisi yang dimiliki unit ini, atau kosongkan divisi."
         status = attrs.get("employment_status", getattr(self.instance, "employment_status", ""))
+        if status == "permanen" and expiry is not None:
+            errors["contract_expiry"] = "Kontrak berakhir tidak berlaku untuk status Permanen."
         if "employment_status" in attrs and status != "kontrak" and "pkwt_type" not in attrs:
             attrs["pkwt_type"] = ""
         kind = attrs.get("pkwt_type", getattr(self.instance, "pkwt_type", ""))

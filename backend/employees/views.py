@@ -82,9 +82,13 @@ class EmployeeViewSet(
         if (
             self.action == "partial_update"
             and isinstance(self.request.data, Mapping)
-            and {"branch", "division", "employment_status", "pkwt_type"}.intersection(
-                self.request.data
-            )
+            and {
+                "branch",
+                "division",
+                "employment_status",
+                "pkwt_type",
+                "contract_expiry",
+            }.intersection(self.request.data)
         ):
             employees = employees.select_for_update(of=("self",))
         if self.request.user.groups.filter(name="HR").exists():
