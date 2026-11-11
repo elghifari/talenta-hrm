@@ -273,9 +273,21 @@ def test_editor_responsive_contrast_and_keyboard(page, login, contract_browser_d
     for width in (390, 768, 1440):
         page.set_viewport_size({"width": width, "height": 900})
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
-        assert page.locator(
-            ".contract-editor input, .contract-editor select, .contract-editor textarea"
-        ).evaluate_all("nodes => nodes.every(e => e.getBoundingClientRect().height >= 44)")
+        mobile_sections = page.get_by_role("combobox", name="Bagian form", exact=True)
+        section_menu = page.get_by_role("navigation", name="Bagian form kontrak", exact=True)
+        if width >= 1180:
+            expect(mobile_sections).not_to_be_visible()
+            expect(section_menu).to_be_visible()
+        else:
+            expect(mobile_sections).to_be_visible()
+            expect(section_menu).not_to_be_visible()
+        controls = page.locator(
+            ".contract-editor input:visible, .contract-editor select:visible, "
+            ".contract-editor textarea:visible"
+        ).evaluate_all(
+            "nodes => nodes.map(e => ({id: e.id, height: e.getBoundingClientRect().height}))"
+        )
+        assert controls and all(control["height"] >= 44 for control in controls), controls
         page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(evidence / f"{data.kind}-{width}.png"))
     pairs = page.locator(".contract-editor").evaluate("""root => {
