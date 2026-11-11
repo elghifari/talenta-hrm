@@ -24,12 +24,12 @@ test('saved manual address survives Unit selection cancellation and changes only
   render(<App initialEntries={[`/employees/${employee}/contracts/${id}`]} />);
   expect(await screen.findByLabelText('Alamat Unit')).toHaveValue('Reviewed manual address');
   expect(screen.getByRole('button', { name: 'Simpan draf' })).toBeDisabled();
-  await user.selectOptions(screen.getByLabelText('Unit sumber'), 'Unit B');
+  await user.selectOptions(screen.getByLabelText('Unit'), 'Unit B');
   await screen.findByRole('dialog');
   expect(screen.getByLabelText('Alamat Unit')).toHaveValue('Reviewed manual address');
   await user.click(screen.getByRole('button', { name: 'Batal' }));
-  expect(screen.getByLabelText('Unit sumber')).toHaveValue('Unit A');
-  await user.selectOptions(screen.getByLabelText('Unit sumber'), 'Unit B');
+  expect(screen.getByLabelText('Unit')).toHaveValue('Unit A');
+  await user.selectOptions(screen.getByLabelText('Unit'), 'Unit B');
   await user.click(screen.getByRole('button', { name: 'Gunakan default' }));
   expect(screen.getByLabelText('Alamat Unit')).toHaveValue('Default address B');
   expect(fetcher.mock.calls.filter(([, init]) => init?.method === 'POST' || init?.method === 'PATCH')).toHaveLength(0);

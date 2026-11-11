@@ -37,6 +37,12 @@ test('new renewal keeps NIP separate and does not write before Save', async () =
   const { fetcher } = renderContractEditor();
   expect(await screen.findByLabelText('NIP')).toHaveValue('');
   expect(screen.getByText('00042')).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'Template' })).toBeVisible();
+  expect(screen.getByLabelText('Unit', { exact: true })).toBeVisible();
+  expect(screen.getByLabelText('Jabatan', { exact: true })).toBeDisabled();
+  expect(screen.getByRole('navigation', { name: 'Bagian form kontrak' })).toBeInTheDocument();
+  expect(screen.queryByText('Klik bagian untuk berpindah.')).not.toBeInTheDocument();
+  expect(screen.queryByText('Sorotan mengikuti posisi scroll.')).not.toBeInTheDocument();
   expect(fetcher.mock.calls.filter(([, init]) => ['POST', 'PATCH'].includes(init?.method ?? 'GET'))).toHaveLength(0);
 });
 

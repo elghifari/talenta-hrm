@@ -5,6 +5,8 @@ import { errorText } from '../api/client';
 import { useSession } from '../auth/SessionProvider';
 import { useUnsavedChanges } from '../employees/useUnsavedChanges';
 import { ContractFields } from './fields';
+import { ContractSectionNav } from './ContractSectionNav';
+import { contractFieldGroups } from './sections';
 import { useContractEditor } from './useContractEditor';
 import './contracts.css';
 function Editor({ employeeId, draftId }: { employeeId: string; draftId?: string }) {
@@ -17,17 +19,34 @@ function Editor({ employeeId, draftId }: { employeeId: string; draftId?: string 
   if (editor.loading) return <p role="status">Memuat draf kontrak…</p>;
   if (editor.loadError) return <><PageTitle>Draf belum dapat dimuat</PageTitle><p role="alert">{errorText(editor.loadError)}</p><button onClick={editor.retry}>Coba lagi</button><Link to={'/employees/' + employeeId}>Detail pegawai</Link></>;
   const disabled = editor.busy || Boolean(editor.uncertain);
+  const groups = contractFieldGroups(editor.fields);
+  const sections = [
+    { id: 'contract-template', label: 'Template', filled: Number(Boolean(editor.input.source_unit)) + Number(Boolean(editor.input.job_default_key)), total: 2, errors: Number(Boolean(editor.errors.source_unit)) + Number(Boolean(editor.errors.job_default_key)) },
+    ...groups.map(group => ({ id: group.id, label: group.label, filled: group.fields.filter(field => Boolean(editor.input.values[field.key]?.trim())).length, total: group.fields.length, errors: group.fields.filter(field => Boolean(editor.errors[field.key])).length })),
+  ];
   return <div className="contract-editor"><div className="page-heading"><div><PageTitle>{draftId ? 'Draf perpanjangan PKWT' : 'Buat draf perpanjangan'}</PageTitle><p>{editor.employee?.full_name} · ID Karyawan <strong>{editor.employee?.employee_code}</strong></p><p>Unit pegawai: {editor.employee?.branch_name || '-'} · Divisi: {editor.employee?.division_name || '-'}</p>{editor.draft && <p>Revisi {editor.draft.revision} · Referensi {editor.draft.reference_version}</p>}</div></div>
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Perubahan belum disimpan"><p>Perubahan belum disimpan. Tinggalkan halaman ini?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap mengedit</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     {editor.error && <div role="alert" className="error"><p>{editor.error}</p>{editor.uncertain && <button disabled={editor.busy} onClick={() => void editor.recover()}>Periksa hasil</button>}{editor.draft && <Link to={`/employees/${employeeId}/contracts/${editor.draft.id}`} target="_blank" rel="noopener">Buka draf tersimpan</Link>}</div>}
     {editor.message && <p role="status" className="success">{editor.message}</p>}
     {!editor.configured && <p role="alert">Referensi kontrak belum tersedia. Riwayat dokumen tetap dapat dibuka.</p>}
-    {!editor.draft && !editor.eligible ? <p>Lengkapi status Kontrak dan tipe PKWT pada <Link to={'/employees/' + employeeId + '/edit'}>data pegawai</Link>.</p> : <form className="record" noValidate onSubmit={event => { event.preventDefault(); void editor.save(); }}>
-      <fieldset className="contract-fields"><legend>Default sumber</legend><div className="form-field"><label htmlFor="contract-source-unit">Unit sumber</label><select id="contract-source-unit" disabled={disabled || !editor.configured} value={editor.input.source_unit ?? ''} onChange={event => editor.choose('unit', event.target.value)}><option value="">Pilih Unit sumber</option>{editor.references?.units.map(row => <option key={row.key} value={row.key}>{row.unit}</option>)}</select></div>
-      <div className="form-field"><label htmlFor="contract-source-job">Default jabatan</label><select id="contract-source-job" disabled={disabled || !editor.configured || !editor.input.source_unit} value={editor.input.job_default_key ?? ''} onChange={event => editor.choose('job', event.target.value)}><option value="">Isi tugas secara manual</option>{editor.references?.jobs.filter(row => row.pkwt_type === editor.kind && row.unit.trim().toLowerCase() === editor.input.source_unit?.trim().toLowerCase()).map(row => <option key={row.key} value={row.key}>{row.division || '(Umum)'} / {row.title}</option>)}</select></div></fieldset>
-      <ContractFields fields={editor.fields} values={editor.input.values} errors={editor.errors} disabled={disabled} change={editor.change} />
-      <div className="form-actions"><button className="primary" type="submit" disabled={disabled || (!editor.draft && !editor.configured) || (Boolean(editor.draft) && !editor.dirty)}>Simpan draf</button><button type="button" disabled={disabled || !editor.draft || editor.dirty || !editor.complete || !editor.configured} onClick={() => void editor.generate()}>Buat DOCX</button><Link to={'/employees/' + employeeId}>Batal</Link></div>
-      {editor.draft && editor.dirty && <p>Simpan perubahan sebelum membuat DOCX.</p>}
+    {!editor.draft && !editor.eligible ? <p>Lengkapi status Kontrak dan tipe PKWT pada <Link to={'/employees/' + employeeId + '/edit'}>data pegawai</Link>.</p> : <form className="contract-form" noValidate onSubmit={event => { event.preventDefault(); void editor.save(); }}>
+      <div className="contract-editor-layout">
+        <ContractSectionNav sections={sections} />
+        <div className="record contract-form-record">
+          <section id="contract-template" className="contract-form-section" aria-labelledby="contract-template-heading">
+            <header className="contract-section-heading"><h2 id="contract-template-heading" tabIndex={-1}>Template</h2><span>1 / {sections.length}</span></header>
+            <div className="contract-fields">
+              <div className="form-field"><label htmlFor="contract-source-unit">Unit</label><select id="contract-source-unit" disabled={disabled || !editor.configured} value={editor.input.source_unit ?? ''} aria-invalid={Boolean(editor.errors.source_unit)} aria-describedby={editor.errors.source_unit ? 'contract-source-unit-error' : undefined} onChange={event => editor.choose('unit', event.target.value)}><option value="">Pilih Unit</option>{editor.references?.units.map(row => <option key={row.key} value={row.key}>{row.unit}</option>)}</select>{editor.errors.source_unit && <p id="contract-source-unit-error" className="error">{editor.errors.source_unit}</p>}</div>
+              <div className="form-field"><label htmlFor="contract-source-job">Jabatan</label><select id="contract-source-job" disabled={disabled || !editor.configured || !editor.input.source_unit} value={editor.input.job_default_key ?? ''} aria-invalid={Boolean(editor.errors.job_default_key)} aria-describedby={editor.errors.job_default_key ? 'contract-source-job-error' : undefined} onChange={event => editor.choose('job', event.target.value)}><option value="">Isi tugas secara manual</option>{editor.references?.jobs.filter(row => row.pkwt_type === editor.kind && row.unit.trim().toLowerCase() === editor.input.source_unit?.trim().toLowerCase()).map(row => <option key={row.key} value={row.key}>{row.division || '(Umum)'} / {row.title}</option>)}</select>{editor.errors.job_default_key && <p id="contract-source-job-error" className="error">{editor.errors.job_default_key}</p>}</div>
+            </div>
+          </section>
+          <ContractFields fields={editor.fields} values={editor.input.values} errors={editor.errors} disabled={disabled} change={editor.change} />
+        </div>
+      </div>
+      <div className="contract-actionbar">
+        <div className="contract-save-state"><p>{editor.uncertain ? 'Hasil belum dapat dipastikan' : editor.busy ? 'Memproses…' : editor.dirty ? 'Perubahan belum disimpan' : editor.draft ? 'Draf tersimpan' : 'Draf belum disimpan'}</p>{editor.draft && editor.dirty && <p className="hint">Simpan perubahan sebelum membuat DOCX.</p>}</div>
+        <div className="form-actions"><button className="primary" type="submit" disabled={disabled || (!editor.draft && !editor.configured) || (Boolean(editor.draft) && !editor.dirty)}>Simpan draf</button><button type="button" disabled={disabled || !editor.draft || editor.dirty || !editor.complete || !editor.configured} onClick={() => void editor.generate()}>Buat DOCX</button><Link to={'/employees/' + employeeId}>Batal</Link></div>
+      </div>
     </form>}
     <section className="record contract-documents" aria-labelledby="contract-documents"><h2 id="contract-documents">Dokumen tersimpan</h2>{!editor.documents.length ? <p>Belum ada dokumen.</p> : <ul>{editor.documents.map(doc => <li key={doc.id}><div><strong>{doc.filename}</strong><p>Revisi {doc.revision} · {new Date(doc.generated_at).toLocaleString('id-ID')}</p></div><button disabled={editor.busy} onClick={() => void editor.download(doc)}>Download DOCX</button></li>)}</ul>}</section>
     <dialog ref={dialog} className="contract-default-confirm" onCancel={event => { event.preventDefault(); editor.cancelSelection(); }}><h2>Ganti isian dengan default?</h2><p>Isian yang telah diedit akan diganti untuk default yang dipilih.</p><div className="form-actions"><button autoFocus onClick={editor.cancelSelection}>Batal</button><button onClick={editor.confirmSelection}>Gunakan default</button></div></dialog>
