@@ -33,7 +33,8 @@ def apply_job_default(bundle, job_key, pkwt_type):
     return {"jabatan": row["title"], "jobdesk": row["jobdesk"]}
 
 
-def prefill_employee(employee, bundle):
+def prefill_employee(employee, bundle, pkwt_type=None):
+    kind = employee.pkwt_type if pkwt_type is None else pkwt_type
     snapshot = {
         key: getattr(employee, key)
         for key in ("employee_code", "full_name", "job_title", "employment_status", "pkwt_type")
@@ -57,18 +58,18 @@ def prefill_employee(employee, bundle):
     source_unit, job_key = None, None
     if unit:
         source_unit = unit["key"]
-        values.update(apply_unit_default(bundle, source_unit, employee.pkwt_type))
+        values.update(apply_unit_default(bundle, source_unit, kind))
         matches = [
             r
             for r in bundle.jobs.values()
             if normalize(r["unit"]) == normalize(unit["unit"])
             and normalize(r["division"] or "(Umum)") == normalize(snapshot["division"] or "(Umum)")
             and normalize(r["title"]) == normalize(employee.job_title)
-            and r["pkwt_type"] == employee.pkwt_type
+            and r["pkwt_type"] == kind
         ]
         if len(matches) == 1:
             job_key = matches[0]["key"]
-            values.update(apply_job_default(bundle, job_key, employee.pkwt_type))
+            values.update(apply_job_default(bundle, job_key, kind))
     return {
         "employee_snapshot": snapshot,
         "source_unit": source_unit,

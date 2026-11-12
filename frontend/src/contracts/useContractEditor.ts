@@ -5,13 +5,15 @@ import { useSession } from '../auth/SessionProvider';
 import { decodeEmployee, type Employee } from '../employees/types';
 import { canonical, editable, initialValues, same, unitDefaults, type Editable } from './api';
 import { decodeDocuments, decodeDraft, decodeReceipt, decodeReferences, kinds, mime, type Draft, type Kind, type Receipt, type References, type Values } from './types';
-type Attempt = { kind: 'create' | 'save'; id: string; revision: number; resultRevision: number; input: Editable } | { kind: 'generate'; id: string; revision: number };
+type Attempt = { kind: 'create' | 'save'; id: string; revision: number; resultRevision: number; pkwt_type: Kind; input: Editable } | { kind: 'generate'; id: string; revision: number };
 export function useContractEditor(employeeId: string, draftId?: string) {
   const session = useSession(), { request } = session;
   const navigate = useNavigate(), location = useLocation();
   const [employee, setEmployee] = useState<Employee>();
   const [references, setReferences] = useState<References>();
   const [draft, setDraft] = useState<Draft>();
+  const [selectedKind, setSelectedKind] = useState<Kind>();
+  const [baselineKind, setBaselineKind] = useState<Kind>();
   const [input, setInput] = useState<Editable>({ source_unit: null, job_default_key: null, values: {} });
   const [baseline, setBaseline] = useState<Editable>(input);
   const [loading, setLoading] = useState(true), [loadError, setLoadError] = useState<unknown>();
@@ -19,7 +21,7 @@ export function useContractEditor(employeeId: string, draftId?: string) {
   const [error, setError] = useState(''), [errors, setErrors] = useState<Values>({});
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState<Attempt>();
   const [documents, setDocuments] = useState<Receipt[]>([]);
-  const [selection, setSelection] = useState<Editable>();
+  const [selection, setSelection] = useState<{ input: Editable; kind?: Kind }>();
   const [retry, setRetry] = useState(0);
   const lock = useRef(false), alive = useRef(true), abort = useRef(new AbortController());
   const createId = useRef(crypto.randomUUID());
@@ -37,7 +39,9 @@ export function useContractEditor(employeeId: string, draftId?: string) {
         const refs = decodeReferences(await request('/api/contract-references/' + (saved ? `?version=${encodeURIComponent(saved.reference_version)}` : ''), { signal }));
         const docs = saved ? decodeDocuments(await request(`/api/contract-drafts/${saved.id}/documents/`, { signal })) : [];
         if (signal.aborted) return;
-        const start = saved ? editable(saved) : kinds.includes(person.pkwt_type as Kind) ? initialValues(person, refs) : { source_unit: null, job_default_key: null, values: {} };
+        const startKind = saved?.pkwt_type ?? (person.employment_status === 'magang' ? 'yayasan' : kinds.includes(person.pkwt_type as Kind) ? person.pkwt_type as Kind : undefined);
+        const start = saved ? editable(saved) : startKind ? initialValues({ ...person, pkwt_type: startKind }, refs) : { source_unit: null, job_default_key: null, values: {} };
+        setSelectedKind(startKind); setBaselineKind(startKind);
         setEmployee(person); setDraft(saved); setReferences(refs); setInput(start); setBaseline(start); setDocuments(docs);
       } catch (cause) { if (!signal.aborted && !isAbort(cause)) setLoadError(cause); }
       finally { if (!signal.aborted) setLoading(false); }
@@ -45,10 +49,10 @@ export function useContractEditor(employeeId: string, draftId?: string) {
     void load();
     return () => { alive.current = false; controller.abort(); };
   }, [employeeId, draftId, request, session.generation, retry]);
-  const kind = (draft?.pkwt_type ?? employee?.pkwt_type ?? '') as Kind;
+  const kind = (draft?.pkwt_type ?? selectedKind ?? '') as Kind;
   const fields = references?.fields[kind] ?? [];
-  const dirty = !same(input, baseline);
-  const eligible = employee?.employment_status === 'kontrak' && kinds.includes(employee.pkwt_type as Kind);
+  const dirty = !same(input, baseline) || (!draft && selectedKind !== baselineKind);
+  const eligible = employee?.employment_status === 'kontrak' || employee?.employment_status === 'magang';
   const configured = Boolean(references?.available && (!draft || (references.version === draft.reference_version && references.templates[kind]?.sha256 === draft.template_sha256)));
   const complete = fields.length > 0 && fields.every(f => !f.required_for_generation || Boolean(input.values[f.key]?.trim()));
   function accept(saved: Draft) {
@@ -72,13 +76,14 @@ export function useContractEditor(employeeId: string, draftId?: string) {
     try { await operation(); } finally { lock.current = false; if (alive.current) setBusy(false); }
   }
   async function save() {
-    if (uncertain || (!draft && !eligible) || (!draft && !configured)) return;
+    if (uncertain || (!draft && (!eligible || !configured || !kinds.includes(kind)))) return;
     const values = canonical(input.values, fields);
     const next = { ...input, values };
-    const attempt: Attempt = { kind: draft ? 'save' : 'create', id: draft?.id ?? createId.current, revision: draft?.revision ?? 0, resultRevision: draft && same(next, editable(draft)) ? draft.revision : (draft?.revision ?? 0) + 1, input: next };
+    const attempt: Attempt = { kind: draft ? 'save' : 'create', id: draft?.id ?? createId.current, revision: draft?.revision ?? 0, resultRevision: draft && same(next, editable(draft)) ? draft.revision : (draft?.revision ?? 0) + 1, pkwt_type: kind, input: next };
     await run(async () => {
       try {
-        const saved = decodeDraft(await request(`/api/contract-drafts/${draft ? draft.id + '/' : ''}`, { method: draft ? 'PATCH' : 'POST', signal: abort.current.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft ? { expected_revision: draft.revision, ...next } : { id: attempt.id, employee: employeeId, ...next }) }), true);
+        const saved = decodeDraft(await request(`/api/contract-drafts/${draft ? draft.id + '/' : ''}`, { method: draft ? 'PATCH' : 'POST', signal: abort.current.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft ? { expected_revision: draft.revision, ...next } : { id: attempt.id, employee: employeeId, pkwt_type: attempt.pkwt_type, ...next }) }), true);
+        if (saved.pkwt_type !== attempt.pkwt_type) throw new ApiError('protocol', 200, null, 'uncertain');
         if (alive.current) accept(saved);
       } catch (cause) { failure(cause, attempt); }
     });
@@ -106,7 +111,7 @@ export function useContractEditor(employeeId: string, draftId?: string) {
           if (alive.current) { setDocuments(receipts); setUncertain(undefined); setMessage('DOCX dibuat.'); }
         } else {
           const saved = decodeDraft(await request(`/api/contract-drafts/${attempt.id}/`, { signal: abort.current.signal }));
-          if (saved.employee !== employeeId || saved.revision !== attempt.resultRevision || !same(editable(saved), attempt.input)) { setError('Hasil berbeda dari isian yang dikirim. Bandingkan draf tersimpan sebelum melanjutkan.'); return; }
+          if (saved.employee !== employeeId || saved.pkwt_type !== attempt.pkwt_type || saved.revision !== attempt.resultRevision || !same(editable(saved), attempt.input)) { setError('Hasil berbeda dari isian yang dikirim. Bandingkan draf tersimpan sebelum melanjutkan.'); return; }
           if (alive.current) accept(saved);
         }
       } catch (cause) { if (alive.current && !isAbort(cause)) setError('Hasil belum dapat dipastikan. Periksa lagi.'); }
@@ -131,7 +136,7 @@ export function useContractEditor(employeeId: string, draftId?: string) {
     });
   }
   function choose(type: 'unit' | 'job', key: string) {
-    if (!references) return;
+    if (!references || lock.current || uncertain) return;
     let next: Editable;
     if (type === 'unit') next = { source_unit: key || null, job_default_key: null, values: { ...input.values, ...(key ? unitDefaults(references, key, kind) : {}) } };
     else {
@@ -139,10 +144,17 @@ export function useContractEditor(employeeId: string, draftId?: string) {
       next = { ...input, job_default_key: row?.key ?? null, values: { ...input.values, ...(row ? { jabatan: row.title, jobdesk: row.jobdesk } : {}) } };
     }
     const replacesReviewedValue = Object.keys(next.values).some(field => Boolean(input.values[field]?.trim()) && next.values[field] !== input.values[field]);
-    if ((dirty || replacesReviewedValue) && !same(next.values, input.values)) setSelection(next); else setInput(next);
+    if ((dirty || replacesReviewedValue) && !same(next.values, input.values)) setSelection({ input: next }); else setInput(next);
+  }
+  function chooseKind(value: string) {
+    if (draft || !employee || !references || lock.current || uncertain || !kinds.includes(value as Kind) || value === kind) return;
+    const nextKind = value as Kind;
+    const next = initialValues({ ...employee, pkwt_type: nextKind }, references);
+    if (dirty && !same(next, input)) setSelection({ input: next, kind: nextKind });
+    else { setSelectedKind(nextKind); setInput(next); setErrors({}); }
   }
   return { employee, draft, references, fields, kind, input, dirty, eligible, configured, complete, loading, loadError, error, errors, message, busy, uncertain, documents, selection, allowLeave,
     change: (key: string, value: string) => setInput(old => ({ ...old, values: { ...old.values, [key]: value } })),
-    choose, confirmSelection: () => { if (selection) setInput(selection); setSelection(undefined); }, cancelSelection: () => setSelection(undefined),
+    choose, chooseKind, confirmSelection: () => { if (lock.current || uncertain) return; if (selection) { setInput(selection.input); if (selection.kind) { setSelectedKind(selection.kind); setErrors({}); } } setSelection(undefined); }, cancelSelection: () => setSelection(undefined),
     save, generate, recover, download, retry: () => { setLoading(true); setLoadError(undefined); setRetry(x => x + 1); } };
 }

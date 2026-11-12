@@ -12,7 +12,7 @@ import { classificationFields, type EmploymentStatus, type PkwtType } from './cl
 type Errors = Partial<Record<keyof EmployeeInput, string>>;
 export function EmployeeForm({ employee }: { employee?: Employee }) {
   const original = employee ?? { employee_code: '', full_name: '' };
-  const [values, setValues] = useState<EmployeeInput>({ employee_code: original.employee_code, full_name: original.full_name, branch: employee?.branch ?? null, division: employee?.division ?? null, date_of_birth: employee?.date_of_birth ?? null, job_title: employee?.job_title ?? '', level: employee?.level ?? '', start_date: employee?.start_date ?? null, contract_expiry: employee?.contract_expiry ?? null, employment_status: employee?.employment_status ?? '', pkwt_type: employee?.pkwt_type ?? '' });
+  const [values, setValues] = useState<EmployeeInput>({ employee_code: original.employee_code, full_name: original.full_name, branch: employee?.branch ?? null, division: employee?.division ?? null, date_of_birth: employee?.date_of_birth ?? null, job_title: employee?.job_title ?? '', level: employee?.level ?? '', start_date: employee?.start_date ?? null, contract_expiry: employee?.employment_status === 'permanen' ? null : employee?.contract_expiry ?? null, employment_status: employee?.employment_status ?? '', pkwt_type: employee?.employment_status === 'magang' ? 'yayasan' : employee?.employment_status === 'kontrak' ? employee.pkwt_type ?? '' : '' });
   const [errors, setErrors] = useState<Errors>({}); const [summary, setSummary] = useState('');
   const [busy, setBusy] = useState(false); const [confirmed, setConfirmed] = useState(false); const [uncertain, setUncertain] = useState(false);
   const { request } = useSession(); const navigate = useNavigate();
@@ -42,7 +42,7 @@ export function EmployeeForm({ employee }: { employee?: Employee }) {
     if (values.employment_status === 'kontrak' && !values.pkwt_type) next.pkwt_type = 'Tipe PKWT wajib diisi untuk status Kontrak.';
     if (Object.keys(next).length) { showErrors(next); return; }
     const payload = employee ? changedFields(original, input) : input;
-    if ('employment_status' in payload && payload.employment_status !== 'kontrak') payload.pkwt_type = '';
+    if ('employment_status' in payload) payload.pkwt_type = payload.employment_status === 'kontrak' ? input.pkwt_type ?? '' : payload.employment_status === 'magang' ? 'yayasan' : '';
     if (employee && !Object.keys(payload).length) return;
     setBusy(true); setErrors({}); setSummary('');
     try {
@@ -82,11 +82,13 @@ export function EmployeeForm({ employee }: { employee?: Employee }) {
           <label htmlFor={'employee-' + field.key}>{field.label}</label>
           <select id={'employee-' + field.key} name={field.key} value={values[field.key] ?? ''} disabled={busy || uncertain} required={field.key === 'pkwt_type'} aria-invalid={Boolean(errors[field.key])} aria-describedby={errors[field.key] ? field.key + '-error' : undefined} onChange={event => {
             const value = event.target.value;
-            setValues(previous => field.key === 'employment_status' ? { ...previous, employment_status: value as EmploymentStatus, pkwt_type: value === 'kontrak' ? previous.pkwt_type : '' } : { ...previous, pkwt_type: value as PkwtType });
+            setValues(previous => field.key === 'employment_status' ? { ...previous, employment_status: value as EmploymentStatus, pkwt_type: value === 'magang' ? 'yayasan' : value === 'kontrak' && previous.employment_status === 'kontrak' ? previous.pkwt_type : '', contract_expiry: value === 'permanen' ? null : previous.contract_expiry } : { ...previous, pkwt_type: value as PkwtType });
+            if (field.key === 'employment_status') setErrors(previous => ({ ...previous, pkwt_type: undefined }));
+            if (field.key === 'employment_status' && value === 'permanen') setErrors(previous => ({ ...previous, contract_expiry: undefined }));
           }}>{field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
           {errors[field.key] && <p className="error" id={field.key + '-error'}>{errors[field.key]}</p>}
         </div>)}
-        {employeeFields.filter(field => field.key !== 'employee_code' && field.key !== 'full_name').map(field => <div className="form-field" key={field.key}><label htmlFor={'employee-' + field.key}>{field.label}</label><input id={'employee-' + field.key} name={field.key} type={field.type} maxLength={'maxLength' in field ? field.maxLength : undefined} value={values[field.key] ?? ''} disabled={busy || uncertain} aria-invalid={Boolean(errors[field.key])} aria-describedby={errors[field.key] ? field.key + '-error' : undefined} onChange={event => { const value = event.target.value; setValues(previous => ({ ...previous, [field.key]: field.type === 'date' ? value || null : value })); }} />{errors[field.key] && <p className="error" id={field.key + '-error'}>{errors[field.key]}</p>}</div>)}
+        {employeeFields.filter(field => field.key !== 'employee_code' && field.key !== 'full_name').map(field => <div className="form-field" key={field.key}><label htmlFor={'employee-' + field.key}>{field.label}</label><input id={'employee-' + field.key} name={field.key} type={field.type} maxLength={'maxLength' in field ? field.maxLength : undefined} value={values[field.key] ?? ''} disabled={busy || uncertain || (field.key === 'contract_expiry' && values.employment_status === 'permanen')} aria-invalid={Boolean(errors[field.key])} aria-describedby={errors[field.key] ? field.key + '-error' : undefined} onChange={event => { const value = event.target.value; setValues(previous => ({ ...previous, [field.key]: field.type === 'date' ? value || null : value })); }} />{errors[field.key] && <p className="error" id={field.key + '-error'}>{errors[field.key]}</p>}</div>)}
       </fieldset>
       <div className="form-actions"><button className="primary" disabled={busy || uncertain || (Boolean(employee) && !dirty)} type="submit">{busy ? 'Menyimpan…' : employee ? 'Simpan perubahan' : 'Simpan pegawai'}</button><button type="button" disabled={busy} onClick={() => navigate(employee ? '/employees/' + employee.id : '/employees')}>Batal</button></div>
     </form>}

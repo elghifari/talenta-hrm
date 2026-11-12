@@ -60,14 +60,14 @@ test('PKWT edit sends only the changed type and renders its human label', async 
   expect(screen.getByText('Yayasan')).toBeVisible();
 });
 
-test.each(['', 'freelance', 'magang', 'permanen'])('leaving Kontrak for %s explicitly clears PKWT without writing other fields', async status => {
+test.each(['', 'freelance', 'magang', 'permanen'])('leaving Kontrak for %s sends its fixed PKWT value without writing other fields', async status => {
   const { writes, user } = setup({ classification: { employment_status: 'kontrak', pkwt_type: 'guru' } });
   await screen.findByRole('heading', { name: 'Ubah data pegawai' });
   await user.selectOptions(screen.getByLabelText('Status Kepegawaian'), status);
   expect(screen.queryByLabelText('Tipe PKWT')).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Simpan perubahan' }));
   await screen.findByRole('heading', { name: identity.full_name });
-  expect(writes).toEqual([{ employment_status: status, pkwt_type: '' }]);
+  expect(writes).toEqual([{ employment_status: status, pkwt_type: status === 'magang' ? 'yayasan' : '' }]);
 });
 
 test('legacy missing classification stays blank, clean and unwritten on cancel', async () => {
@@ -99,15 +99,16 @@ test('selecting a non-contract status explicitly sends an empty PKWT even from a
   expect(writes).toEqual([{ employment_status: 'permanen', pkwt_type: '' }]);
 });
 
-test('create of a non-contract employee explicitly sends an empty PKWT', async () => {
+test('create of a Magang employee sends Yayasan without a type dropdown', async () => {
   const { writes, user } = setup({ create: true });
   await screen.findByRole('heading', { name: 'Tambah pegawai' });
   await user.type(screen.getByLabelText('Kode pegawai'), '0019');
   await user.type(screen.getByLabelText('Nama lengkap'), identity.full_name);
   await user.selectOptions(screen.getByLabelText('Status Kepegawaian'), 'magang');
+  expect(screen.queryByRole('combobox', { name: 'Tipe PKWT' })).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Simpan pegawai' }));
   await screen.findByRole('heading', { name: identity.full_name });
-  expect(writes).toEqual([{ employee_code: '0019', full_name: identity.full_name, employment_status: 'magang', pkwt_type: '' }]);
+  expect(writes).toEqual([{ employee_code: '0019', full_name: identity.full_name, employment_status: 'magang', pkwt_type: 'yayasan' }]);
 });
 
 test('reverting the classification draft returns to a clean no-op without inferring a PKWT', async () => {

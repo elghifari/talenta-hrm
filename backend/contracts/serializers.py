@@ -16,6 +16,7 @@ class StrictSerializer(serializers.Serializer):
 class CreateDraftInput(StrictSerializer):
     id = serializers.UUIDField()
     employee = serializers.UUIDField()
+    pkwt_type = serializers.ChoiceField(choices=("yayasan", "guru", "klinik_umum"), required=False)
     source_unit = serializers.CharField(max_length=200, allow_null=True, required=False)
     job_default_key = serializers.CharField(max_length=1000, allow_null=True, required=False)
     values = serializers.JSONField(default=dict)

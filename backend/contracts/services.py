@@ -78,23 +78,33 @@ def record_contract_audit(actor, action, draft, changed):
 
 @transaction.atomic
 def create_draft(
-    *, actor, draft_id, employee_id, source_unit=UNSET, job_default_key=UNSET, values=None
+    *,
+    actor,
+    draft_id,
+    employee_id,
+    pkwt_type=None,
+    source_unit=UNSET,
+    job_default_key=UNSET,
+    values=None,
 ):
     require_hr(actor)
     employee = get_object_or_404(Employee.objects.select_for_update(), pk=employee_id)
-    if employee.employment_status != "kontrak" or employee.pkwt_type not in KINDS:
-        raise ValidationError({"employee": ["Lengkapi klasifikasi Kontrak dan tipe PKWT."]})
+    if employee.employment_status not in {"kontrak", "magang"}:
+        raise ValidationError({"employee": ["Draf PKWT hanya untuk pegawai Kontrak atau Magang."]})
+    kind = employee.pkwt_type if pkwt_type is None else pkwt_type
+    if kind not in KINDS:
+        raise ValidationError({"pkwt_type": ["Pilih tipe PKWT yang akan dibuat."]})
     bundle = reference()
-    prefill = prefill_employee(employee, bundle)
+    prefill = prefill_employee(employee, bundle, kind)
     if source_unit is UNSET:
         source_unit = prefill["source_unit"]
     if job_default_key is UNSET:
         job_default_key = (
             prefill["job_default_key"] if source_unit == prefill["source_unit"] else None
         )
-    selections(bundle, employee.pkwt_type, source_unit, job_default_key)
-    supplied = validate_values(employee.pkwt_type, values, complete=False)
-    checked = validate_values(employee.pkwt_type, {**prefill["values"], **supplied}, complete=False)
+    selections(bundle, kind, source_unit, job_default_key)
+    supplied = validate_values(kind, values, complete=False)
+    checked = validate_values(kind, {**prefill["values"], **supplied}, complete=False)
     try:
         with transaction.atomic():
             draft = ContractDraft.objects.create(
@@ -102,9 +112,9 @@ def create_draft(
                 employee=employee,
                 created_by=actor,
                 updated_by=actor,
-                pkwt_type=employee.pkwt_type,
+                pkwt_type=kind,
                 reference_version=bundle.version,
-                template_sha256=bundle.template_sha256(employee.pkwt_type),
+                template_sha256=bundle.template_sha256(kind),
                 employee_snapshot=prefill["employee_snapshot"],
                 source_unit=source_unit,
                 job_default_key=job_default_key,

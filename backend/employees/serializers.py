@@ -59,13 +59,27 @@ class EmployeeSerializer(serializers.ModelSerializer):
         status = attrs.get("employment_status", getattr(self.instance, "employment_status", ""))
         if status == "permanen" and expiry is not None:
             errors["contract_expiry"] = "Kontrak berakhir tidak berlaku untuk status Permanen."
-        if "employment_status" in attrs and status != "kontrak" and "pkwt_type" not in attrs:
+        if status == "magang":
+            if attrs.get("pkwt_type", "yayasan") not in {"", "yayasan"}:
+                errors["pkwt_type"] = "Tipe PKWT untuk status Magang adalah Yayasan."
+            elif self.instance is None or {"employment_status", "pkwt_type"}.intersection(attrs):
+                attrs["pkwt_type"] = "yayasan"
+        elif "employment_status" in attrs and status != "kontrak" and "pkwt_type" not in attrs:
             attrs["pkwt_type"] = ""
         kind = attrs.get("pkwt_type", getattr(self.instance, "pkwt_type", ""))
-        if status == "kontrak" and not kind:
+        if status == "kontrak" and (
+            not kind
+            or (
+                getattr(self.instance, "employment_status", "") == "magang"
+                and "employment_status" in attrs
+                and "pkwt_type" not in attrs
+            )
+        ):
             errors["pkwt_type"] = "Pilih tipe PKWT untuk status Kontrak."
-        elif status != "kontrak" and kind:
-            errors["pkwt_type"] = "Tipe PKWT hanya berlaku untuk status Kontrak."
+        elif status == "magang" and kind != "yayasan":
+            errors["pkwt_type"] = "Tipe PKWT untuk status Magang adalah Yayasan."
+        elif status not in {"kontrak", "magang"} and kind:
+            errors["pkwt_type"] = "Tipe PKWT hanya berlaku untuk status Kontrak atau Magang."
         if errors:
             raise serializers.ValidationError(errors)
         return attrs

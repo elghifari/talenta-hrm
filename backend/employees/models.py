@@ -59,7 +59,8 @@ class Employee(models.Model):
             ),
             models.CheckConstraint(
                 condition=(models.Q(employment_status="kontrak") & ~models.Q(pkwt_type=""))
-                | (~models.Q(employment_status="kontrak") & models.Q(pkwt_type="")),
+                | models.Q(employment_status="magang", pkwt_type="yayasan")
+                | (~models.Q(employment_status__in=["kontrak", "magang"]) & models.Q(pkwt_type="")),
                 name="valid_employee_employment_pair",
             ),
         ]

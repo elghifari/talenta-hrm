@@ -68,7 +68,7 @@ def test_legacy_create_is_unclassified_without_inference(hr):
         ("kontrak", "guru"),
         ("kontrak", "yayasan"),
         ("freelance", ""),
-        ("magang", ""),
+        ("magang", "yayasan"),
         ("permanen", ""),
         ("", ""),
     ],
