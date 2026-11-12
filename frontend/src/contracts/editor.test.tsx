@@ -56,8 +56,9 @@ test.each(['kontrak', 'magang'] as const)('%s can select a target type independe
   const writes = fetcher.mock.calls.filter(([, init]) => init?.method === 'POST');
   expect(writes).toHaveLength(1);
   expect(JSON.parse(String(writes[0][1]?.body))).toMatchObject({ employee: employeeId, pkwt_type: 'guru' });
-  expect(screen.getByLabelText('Tipe PKWT')).toHaveValue('Guru');
-  expect(screen.getByLabelText('Tipe PKWT')).toHaveAttribute('readonly');
+  const savedType = await screen.findByRole('textbox', { name: 'Tipe PKWT' });
+  expect(savedType).toHaveValue('Guru');
+  expect(savedType).toHaveAttribute('readonly');
 });
 
 test('changing type requires confirmation before discarding edited values', async () => {
