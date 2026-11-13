@@ -121,15 +121,36 @@ def test_hr_generates_and_downloads_saved_contract(page, login, db_call, contrac
     page.goto(data.employee_url)
     page.get_by_role("link", name="Buat draf perpanjangan", exact=True).click()
     data.fill_required_fields(page)
+    documents = page.get_by_role("region", name="Dokumen tersimpan", exact=True)
+    expect(documents).to_have_count(0)
     page.get_by_role("button", name="Simpan draf", exact=True).click()
     expect(page.get_by_text("Draf tersimpan.", exact=True)).to_be_visible()
     page.reload()
     expect(page.get_by_label("NIP", exact=True)).to_have_value("0000123")
+    expect(documents).to_have_count(0)
     page.get_by_role("button", name="Buat DOCX", exact=True).click()
     expect(page.get_by_text("DOCX dibuat.", exact=True)).to_be_visible()
+    expect(documents).to_be_visible()
+    assert documents.evaluate(
+        "node => Boolean(node.compareDocumentPosition("
+        "document.querySelector('.contract-actionbar')) & Node.DOCUMENT_POSITION_FOLLOWING)"
+    )
+    expect(documents.get_by_role("button", name="Download DOCX", exact=True)).to_have_attribute(
+        "type", "button"
+    )
+    download_writes = []
+    page.on(
+        "request",
+        lambda request: (
+            download_writes.append(request.url)
+            if request.method in {"POST", "PATCH"} and "/api/contract-drafts/" in request.url
+            else None
+        ),
+    )
     with page.expect_download() as event:
         page.get_by_role("button", name="Download DOCX", exact=True).first.click()
     content = Path(event.value.path()).read_bytes()
+    assert download_writes == []
     output = Document(BytesIO(content))
     assert data.expected_name in "\n".join(p.text for p in output.paragraphs)
     assert output.tables[0].cell(0, 0).text == data.values["jobdesk"]
@@ -140,6 +161,15 @@ def test_hr_generates_and_downloads_saved_contract(page, login, db_call, contrac
     for width in (390, 768, 1440):
         page.set_viewport_size({"width": width, "height": 900})
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        assert documents.evaluate("node => node.scrollWidth <= node.clientWidth")
+        page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+        assert documents.evaluate(
+            "node => node.getBoundingClientRect().bottom <= "
+            "document.querySelector('.contract-actionbar').getBoundingClientRect().top"
+        )
+        captures = Path(".local/contract-documents-layout")
+        captures.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(captures / f"{data.kind}-{width}.png"))
     page.get_by_label("NIP", exact=True).fill("0000999")
     page.get_by_role("button", name="Simpan draf", exact=True).click()
     expect(page.get_by_text("Draf tersimpan.", exact=True)).to_be_visible()

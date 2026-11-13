@@ -45,12 +45,12 @@ function Editor({ employeeId, draftId }: { employeeId: string; draftId?: string 
           <ContractFields fields={editor.fields} values={editor.input.values} errors={editor.errors} disabled={disabled} change={editor.change} />
         </div>
       </div>
+      {editor.documents.length > 0 && <section className="record contract-documents" aria-labelledby="contract-documents"><h2 id="contract-documents">Dokumen tersimpan</h2><ul>{editor.documents.map(doc => <li key={doc.id}><div><strong>{doc.filename}</strong><p>Revisi {doc.revision} · {new Date(doc.generated_at).toLocaleString('id-ID')}</p></div><button type="button" disabled={editor.busy} onClick={() => void editor.download(doc)}>Download DOCX</button></li>)}</ul></section>}
       <div className="contract-actionbar">
         <div className="contract-save-state"><p>{editor.uncertain ? 'Hasil belum dapat dipastikan' : editor.busy ? 'Memproses…' : editor.dirty ? 'Perubahan belum disimpan' : editor.draft ? 'Draf tersimpan' : 'Draf belum disimpan'}</p>{editor.draft && editor.dirty && <p className="hint">Simpan perubahan sebelum membuat DOCX.</p>}</div>
         <div className="form-actions"><button className="primary" type="submit" disabled={disabled || (!editor.draft && (!editor.configured || !editor.kind)) || (Boolean(editor.draft) && !editor.dirty)}>Simpan draf</button><button type="button" disabled={disabled || !editor.draft || editor.dirty || !editor.complete || !editor.configured} onClick={() => void editor.generate()}>Buat DOCX</button><Link to={'/employees/' + employeeId}>Batal</Link></div>
       </div>
     </form>}
-    <section className="record contract-documents" aria-labelledby="contract-documents"><h2 id="contract-documents">Dokumen tersimpan</h2>{!editor.documents.length ? <p>Belum ada dokumen.</p> : <ul>{editor.documents.map(doc => <li key={doc.id}><div><strong>{doc.filename}</strong><p>Revisi {doc.revision} · {new Date(doc.generated_at).toLocaleString('id-ID')}</p></div><button disabled={editor.busy} onClick={() => void editor.download(doc)}>Download DOCX</button></li>)}</ul>}</section>
     <dialog ref={dialog} className="contract-default-confirm" onCancel={event => { event.preventDefault(); editor.cancelSelection(); }}><h2>Ganti isian dengan default?</h2><p>Isian yang telah diedit akan diganti untuk default yang dipilih.</p><div className="form-actions"><button autoFocus onClick={editor.cancelSelection}>Batal</button><button onClick={editor.confirmSelection}>Gunakan default</button></div></dialog>
   </div>;
 }
