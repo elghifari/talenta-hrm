@@ -10,10 +10,11 @@ export function ContractSectionNav({ sections }: { sections: ContractSection[] }
     let frame = 0;
     function update() {
       const mobileHeight = document.querySelector<HTMLElement>('.contract-mobile-sections')?.offsetHeight ?? 0;
+      const contextHeight = document.querySelector<HTMLElement>('.contract-employee-context')?.offsetHeight ?? 0;
       let current = ids[0];
       for (const id of ids) {
         const target = document.getElementById(id);
-        if (target && target.getBoundingClientRect().top <= mobileHeight + 48) current = id;
+        if (target && target.getBoundingClientRect().top <= contextHeight + mobileHeight + 48) current = id;
       }
       setActiveId(current);
       frame = 0;
@@ -35,7 +36,8 @@ export function ContractSectionNav({ sections }: { sections: ContractSection[] }
     const target = document.getElementById(id);
     if (!target) return;
     const mobileHeight = document.querySelector<HTMLElement>('.contract-mobile-sections')?.offsetHeight ?? 0;
-    const offset = mobileHeight ? mobileHeight + 16 : 28;
+    const contextHeight = document.querySelector<HTMLElement>('.contract-employee-context')?.offsetHeight ?? 0;
+    const offset = contextHeight + (mobileHeight ? mobileHeight + 16 : 28);
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     document.getElementById(id + '-heading')?.focus({ preventScroll: true });
     window.scrollTo({ top: window.scrollY + target.getBoundingClientRect().top - offset, behavior: reducedMotion ? 'instant' : 'smooth' });

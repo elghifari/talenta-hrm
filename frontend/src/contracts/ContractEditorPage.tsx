@@ -15,8 +15,20 @@ function Editor({ employeeId, draftId }: { employeeId: string; draftId?: string 
   const { setDirty } = useOutletContext<{ setDirty(value: boolean): void }>();
   const blocker = useUnsavedChanges(editor.dirty || editor.busy || Boolean(editor.uncertain), editor.allowLeave);
   const dialog = useRef<HTMLDialogElement>(null);
+  const editorRoot = useRef<HTMLDivElement>(null);
+  const employeeContext = useRef<HTMLParagraphElement>(null);
   useEffect(() => { setDirty(editor.dirty || Boolean(editor.uncertain)); return () => setDirty(false); }, [editor.dirty, editor.uncertain, setDirty]);
   useEffect(() => { if (editor.selection) dialog.current?.showModal(); else if (dialog.current?.open) dialog.current.close(); }, [editor.selection]);
+  useEffect(() => {
+    const root = editorRoot.current, context = employeeContext.current;
+    if (!root || !context) return;
+    const measure = () => root.style.setProperty('--contract-context-height', `${context.getBoundingClientRect().height}px`);
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(measure);
+    observer?.observe(context);
+    window.addEventListener('resize', measure);
+    return () => { observer?.disconnect(); window.removeEventListener('resize', measure); };
+  }, [editor.loading, editor.loadError]);
   if (editor.loading) return <p role="status">Memuat draf kontrak…</p>;
   if (editor.loadError) return <><PageTitle>Draf belum dapat dimuat</PageTitle><p role="alert">{errorText(editor.loadError)}</p><button onClick={editor.retry}>Coba lagi</button><Link to={'/employees/' + employeeId}>Detail pegawai</Link></>;
   const disabled = editor.busy || Boolean(editor.uncertain);
@@ -25,7 +37,8 @@ function Editor({ employeeId, draftId }: { employeeId: string; draftId?: string 
     { id: 'contract-template', label: 'Template', filled: Number(Boolean(editor.kind)) + Number(Boolean(editor.input.source_unit)) + Number(Boolean(editor.input.job_default_key)), total: 3, errors: Number(Boolean(editor.errors.pkwt_type)) + Number(Boolean(editor.errors.source_unit)) + Number(Boolean(editor.errors.job_default_key)) },
     ...groups.map(group => ({ id: group.id, label: group.label, filled: group.fields.filter(field => Boolean(editor.input.values[field.key]?.trim())).length, total: group.fields.length, errors: group.fields.filter(field => Boolean(editor.errors[field.key])).length })),
   ];
-  return <div className="contract-editor"><div className="page-heading"><div><PageTitle>{draftId ? 'Draf perpanjangan PKWT' : 'Buat draf perpanjangan'}</PageTitle><p>{editor.employee?.full_name} · ID Karyawan <strong>{editor.employee?.employee_code}</strong></p><p>Unit pegawai: {editor.employee?.branch_name || '-'} · Divisi: {editor.employee?.division_name || '-'}</p>{editor.draft && <p>Revisi {editor.draft.revision} · Referensi {editor.draft.reference_version}</p>}</div></div>
+  return <div ref={editorRoot} className="contract-editor"><div className="page-heading"><div><PageTitle>{draftId ? 'Draf perpanjangan PKWT' : 'Buat draf perpanjangan'}</PageTitle><p>Unit pegawai: {editor.employee?.branch_name || '-'} · Divisi: {editor.employee?.division_name || '-'}</p>{editor.draft && <p>Revisi {editor.draft.revision} · Referensi {editor.draft.reference_version}</p>}</div></div>
+    <p ref={employeeContext} className="contract-employee-context"><strong>{editor.employee?.full_name}</strong><span>· ID Karyawan <strong>{editor.employee?.employee_code}</strong></span></p>
     {blocker.state === 'blocked' && <section className="notice" role="alertdialog" aria-label="Perubahan belum disimpan"><p>Perubahan belum disimpan. Tinggalkan halaman ini?</p><div className="form-actions"><button autoFocus onClick={() => blocker.reset()}>Tetap mengedit</button><button onClick={() => blocker.proceed()}>Tinggalkan halaman</button></div></section>}
     {editor.error && <div role="alert" className="error"><p>{editor.error}</p>{editor.uncertain && <button disabled={editor.busy} onClick={() => void editor.recover()}>Periksa hasil</button>}{editor.draft && <Link to={`/employees/${employeeId}/contracts/${editor.draft.id}`} target="_blank" rel="noopener">Buka draf tersimpan</Link>}</div>}
     {editor.message && <p role="status" className="success">{editor.message}</p>}
