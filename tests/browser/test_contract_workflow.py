@@ -163,10 +163,19 @@ def test_hr_generates_and_downloads_saved_contract(page, login, db_call, contrac
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
         assert documents.evaluate("node => node.scrollWidth <= node.clientWidth")
         page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
-        assert documents.evaluate(
-            "node => node.getBoundingClientRect().bottom <= "
-            "document.querySelector('.contract-actionbar').getBoundingClientRect().top"
-        )
+        layout = documents.evaluate("""node => {
+            const actions = document.querySelector('.contract-actionbar').getBoundingClientRect();
+            return {
+                documentsBottom: node.getBoundingClientRect().bottom,
+                actionsTop: actions.top,
+                actionsBottom: actions.bottom,
+                viewportHeight: innerHeight,
+                scrollTop: scrollY,
+                scrollHeight: document.documentElement.scrollHeight
+            };
+        }""")
+        assert layout["documentsBottom"] <= layout["actionsTop"] + 1, layout
+        assert abs(layout["actionsBottom"] - layout["viewportHeight"]) <= 1, layout
         captures = Path(".local/contract-documents-layout")
         captures.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(captures / f"{data.kind}-{width}.png"))
